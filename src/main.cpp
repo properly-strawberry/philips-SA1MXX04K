@@ -36,7 +36,7 @@ std::thread scanner;
 std::mutex libraryMutex;
 std::vector<player::Song> scanResult;
 std::array<uint32_t,128*64> screen;
-ULONGLONG started=0,pressedAt=0,closingAt=0;
+ULONGLONG started=0,pressedAt=0;
 int pressed=-1;
 bool closing=false;
 std::wstring screenshotPath,smokeReport;
@@ -231,9 +231,9 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     case ScanDone:{std::lock_guard<std::mutex> l(libraryMutex);ui->setLibrary(std::move(scanResult));return 0;}
     case WM_TIMER: {
         auto time=GetTickCount64();
-        if(closing&&time-closingAt>=1200){DestroyWindow(hwnd);return 0;}
-        if(rescanRequested.exchange(false))beginScan();
+        if(rescanRequested.exchange(false)&&!closing)beginScan();
         ui->tick(time);
+        if(closing&&ui->shutdownFinished()){DestroyWindow(hwnd);return 0;}
         if(smokeStep>=0&&smokeStep<101)smokeTick();
         else if(smokeStep<0&&!screenshotPath.empty()&&time-started>8200&&!closing){saveScreenshot(screenshotPath);PostMessageW(hwnd,WM_CLOSE,0,0);}
         InvalidateRect(hwnd,nullptr,FALSE);return 0;
@@ -271,7 +271,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     case WM_CAPTURECHANGED:ui->cancelTransport();pressed=-1;return 0;
     case WM_ERASEBKGND:return 1;
     case WM_PAINT:{PAINTSTRUCT p;HDC dc=BeginPaint(hwnd,&p);RECT r;GetClientRect(hwnd,&r);HDC mem=CreateCompatibleDC(dc);HBITMAP bitmap=CreateCompatibleBitmap(dc,std::max(1L,r.right),std::max(1L,r.bottom));auto old=SelectObject(mem,bitmap);paint(mem,r.right,r.bottom);BitBlt(dc,0,0,r.right,r.bottom,mem,0,0,SRCCOPY);SelectObject(mem,old);DeleteObject(bitmap);DeleteDC(mem);EndPaint(hwnd,&p);return 0;}
-    case WM_CLOSE:if(!closing){if(smokeStep<0)saveSettings();recorder.finish(true);audio->stop();ui->shutdown();closing=true;closingAt=GetTickCount64();}return 0;
+    case WM_CLOSE:if(!closing){if(smokeStep<0)saveSettings();recorder.finish(true);audio->stop();ui->shutdown();closing=true;}return 0;
     case WM_DESTROY:KillTimer(hwnd,1);PostQuitMessage(0);return 0;
     }
     return DefWindowProcW(hwnd,msg,wp,lp);

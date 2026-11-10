@@ -1,0 +1,403 @@
+[
+  {
+    "address": "0x15876c",
+    "evidence_id": "ev_5de526df939487756eb8a2b7f050b2cc28d765151d78d33dfcd6c475280f2725",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15876c",
+      "name": "FUN_0015876c",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15876c",
+            "end": "0x15880d"
+          }
+        ],
+        "total_bytes": 162,
+        "span_bytes": 162,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015876c()",
+      "locals": [
+        {
+          "description": "undefined2 local_12 @ Stack[-0x12]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_14 @ Stack[-0x14]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_16 @ Stack[-0x16]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_18 @ Stack[-0x18]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_1c @ Stack[-0x1c]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_20 @ Stack[-0x20]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_24 @ Stack[-0x24]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_28 @ Stack[-0x28]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_2a @ Stack[-0x2a]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_2c @ Stack[-0x2c]:2",
+          "provenance": "ghidra-function-database"
+        }
+      ]
+    },
+    "pseudocode": "\nundefined4 FUN_0015876c(int param_1)\n\n{\n  undefined4 local_2c;\n  int local_1c;\n  undefined2 local_18;\n  undefined2 local_16;\n  undefined2 local_14;\n  undefined2 local_12;\n  \n  local_1c = 0;\n  *(undefined1 *)(param_1 + 0x2c) = 0;\n  FUN_00149fd8(&local_18,2,0x19,0x7c,0xe);\n  local_2c = CONCAT22(local_16,local_18);\n  FUN_00196db8(&local_1c,DAT_00158810,2,local_2c,CONCAT22(local_12,local_14),1,0xe6);\n  if (local_1c != 0) {\n    FUN_00146db0(local_1c,0x102,0xffffffff);\n    FUN_00146db0(local_1c,0x103,0xff000000);\n    FUN_00146db0(local_1c,0x105,DAT_00158814);\n    FUN_00146db0(local_1c,0x106,1);\n    FUN_00146db0(local_1c,0x109,1);\n    FUN_00196d4c(param_1,local_1c);\n  }\n  *(undefined2 *)(param_1 + 0x26) = 0x32;\n  return 1;\n}\n\n",
+    "assembly": [
+      "0x15876c: push {r4,r5,r6,lr}",
+      "0x15876e: sub sp, #0x18",
+      "0x158770: adds r6, r0, #0x0",
+      "0x158772: movs r4, #0x3",
+      "0x158774: adds r4, #0xff",
+      "0x158776: movs r3, #0x0",
+      "0x158778: str r3, [sp,#0xc]",
+      "0x15877a: adds r5, r6, #0x0",
+      "0x15877c: movs r0, #0x2c",
+      "0x15877e: strb r3, [r0,r5]",
+      "0x158780: movs r3, #0xe",
+      "0x158782: str r3, [sp,#0x0]",
+      "0x158784: movs r3, #0x7c",
+      "0x158786: movs r2, #0x19",
+      "0x158788: add r0, sp,#0x10",
+      "0x15878a: movs r1, #0x2",
+      "0x15878c: bl 0x00149fd8",
+      "0x158790: movs r3, #0xe6",
+      "0x158792: str r3, [sp,#0x8]",
+      "0x158794: movs r0, #0x1",
+      "0x158796: str r0, [sp,#0x4]",
+      "0x158798: sub sp, #0x4",
+      "0x15879a: add r1, sp,#0x14",
+      "0x15879c: mov r0, sp",
+      "0x15879e: ldrh r2, [r1,#0x0]",
+      "0x1587a0: strh r2, [r0,#0x0]",
+      "0x1587a2: ldrh r2, [r1,#0x2]",
+      "0x1587a4: strh r2, [r0,#0x2]",
+      "0x1587a6: ldrh r2, [r1,#0x4]",
+      "0x1587a8: strh r2, [r0,#0x4]",
+      "0x1587aa: ldrh r1, [r1,#0x6]",
+      "0x1587ac: strh r1, [r0,#0x6]",
+      "0x1587ae: pop {r3}",
+      "0x1587b0: ldr r1, [0x00158810]",
+      "0x1587b2: add r0, sp,#0xc",
+      "0x1587b4: movs r2, #0x2",
+      "0x1587b6: bl 0x00196db8",
+      "0x1587ba: ldr r0, [sp,#0xc]",
+      "0x1587bc: cmp r0, #0x0",
+      "0x1587be: beq 0x001587fc",
+      "0x1587c0: movs r2, #0x0",
+      "0x1587c2: mvns r2, r2",
+      "0x1587c4: adds r1, r4, #0x0",
+      "0x1587c6: bl 0x00146db0",
+      "0x1587ca: movs r2, #0xff",
+      "0x1587cc: lsls r2, r2, #0x18",
+      "0x1587ce: adds r1, r4, #0x1",
+      "0x1587d0: ldr r0, [sp,#0xc]",
+      "0x1587d2: bl 0x00146db0",
+      "0x1587d6: ldr r2, [0x00158814]",
+      "0x1587d8: adds r1, r4, #0x3",
+      "0x1587da: ldr r0, [sp,#0xc]",
+      "0x1587dc: bl 0x00146db0",
+      "0x1587e0: adds r1, r4, #0x4",
+      "0x1587e2: ldr r0, [sp,#0xc]",
+      "0x1587e4: movs r2, #0x1",
+      "0x1587e6: bl 0x00146db0",
+      "0x1587ea: adds r1, r4, #0x7",
+      "0x1587ec: ldr r0, [sp,#0xc]",
+      "0x1587ee: movs r2, #0x1",
+      "0x1587f0: bl 0x00146db0",
+      "0x1587f4: ldr r1, [sp,#0xc]",
+      "0x1587f6: adds r0, r6, #0x0",
+      "0x1587f8: bl 0x00196d4c",
+      "0x1587fc: ldrh r3, [r5,#0x26]",
+      "0x1587fe: lsrs r3, r3, #0x10",
+      "0x158800: lsls r3, r3, #0x10",
+      "0x158802: movs r0, #0x32",
+      "0x158804: orrs r3, r0",
+      "0x158806: strh r3, [r5,#0x26]",
+      "0x158808: movs r0, #0x1",
+      "0x15880a: add sp, #0x18",
+      "0x15880c: pop {r4,r5,r6,pc}"
+    ]
+  },
+  {
+    "address": "0x158734",
+    "evidence_id": "ev_2e28c39e585c150b33e19c3bfd75791adfda05a3c679c905cb7b37a28b3ea19f",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x158734",
+      "name": "FUN_00158734",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x158734",
+            "end": "0x15875b"
+          }
+        ],
+        "total_bytes": 40,
+        "span_bytes": 40,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_00158734()",
+      "locals": [
+        {
+          "description": "undefined4 local_24 @ Stack[-0x24]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_28 @ Stack[-0x28]:4",
+          "provenance": "ghidra-function-database"
+        }
+      ]
+    },
+    "pseudocode": "\nvoid FUN_00158734(void)\n\n{\n  FUN_00196af8(1,DAT_00158768,0x2c,1,DAT_0015875c,0,DAT_00158760,2,DAT_00158764,0xffffffff);\n  return;\n}\n\n",
+    "assembly": [
+      "0x158734: push {r4,r5,r6,lr}",
+      "0x158736: sub sp, #0x18",
+      "0x158738: ldr r0, [0x0015875c]",
+      "0x15873a: ldr r2, [0x00158760]",
+      "0x15873c: movs r3, #0x0",
+      "0x15873e: mvns r5, r3",
+      "0x158740: ldr r4, [0x00158764]",
+      "0x158742: movs r3, #0x2",
+      "0x158744: movs r1, #0x0",
+      "0x158746: add r6, sp,#0x4",
+      "0x158748: stmia r6!, {r1,r2,r3,r4,r5}",
+      "0x15874a: str r0, [sp,#0x0]",
+      "0x15874c: movs r2, #0x2c",
+      "0x15874e: ldr r1, [0x00158768]",
+      "0x158750: movs r3, #0x1",
+      "0x158752: adds r0, r3, #0x0",
+      "0x158754: bl 0x00196af8",
+      "0x158758: add sp, #0x18",
+      "0x15875a: pop {r4,r5,r6,pc}"
+    ]
+  },
+  {
+    "address": "0x15863e",
+    "evidence_id": "ev_6aef8fb6d24255da5b404333997c9add4ee7b606cce53e4ced3f6ed60aee7e0f",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15863e",
+      "name": "FUN_0015863e",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15863e",
+            "end": "0x158713"
+          }
+        ],
+        "total_bytes": 214,
+        "span_bytes": 214,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015863e()",
+      "locals": [
+        {
+          "description": "undefined4 local_18 @ Stack[-0x18]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_1c @ Stack[-0x1c]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_20 @ Stack[-0x20]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_24 @ Stack[-0x24]:4",
+          "provenance": "ghidra-function-database"
+        }
+      ]
+    },
+    "pseudocode": "\nundefined4 FUN_0015863e(int param_1)\n\n{\n  int iVar1;\n  int iVar2;\n  char *pcVar3;\n  int local_20;\n  undefined4 local_1c;\n  undefined4 local_18 [2];\n  \n  pcVar3 = (char *)(param_1 + 0x2c);\n  if (*(char *)(param_1 + 0x2c) < '\\a') {\n    local_20 = 0;\n    local_1c = 0xc4;\n    if (*(char *)(param_1 + 0x2c) == '\\0') {\n      iVar1 = FUN_00146dda(param_1,2);\n      *(int *)(param_1 + 0x30) = iVar1;\n      if (iVar1 != 0) {\n        FUN_00196d9e();\n        FUN_00196e30(*(undefined4 *)(param_1 + 0x30));\n        *(undefined4 *)(param_1 + 0x30) = 0;\n      }\n      *(undefined2 *)(param_1 + 0x26) = 0x19;\n    }\n    FUN_000f2364(&local_20,local_1c,1,2);\n    if (local_20 != 0) {\n      iVar1 = FUN_00174518(*pcVar3 + DAT_0015872c,&local_1c,0);\n      local_1c = 0xc4;\n      if (-1 < iVar1) {\n        FUN_00014e64(iVar1,4,0);\n        iVar2 = 0;\n        do {\n          FUN_00174390(iVar1,local_20,local_1c);\n          FUN_00147444(local_20,0xf,iVar2 + 9,0x62,1);\n          FUN_0014750e();\n          iVar2 = iVar2 + 1;\n        } while (iVar2 < 0x2e);\n      }\n      FUN_00014e1c(iVar1);\n      FUN_000f23a2(local_20);\n    }\n    *pcVar3 = *pcVar3 + '\\x01';\n  }\n  else {\n    *(undefined2 *)(param_1 + 0x26) = 0;\n    *pcVar3 = '\\0';\n    local_18[0] = DAT_00158730;\n    FUN_000132b0(*DAT_00158728,local_18,0);\n  }\n  return 0;\n}\n\n",
+    "assembly": [
+      "0x15863e: push {r4,r5,r6,lr}",
+      "0x158640: sub sp, #0x14",
+      "0x158642: adds r4, r0, #0x0",
+      "0x158644: adds r5, r4, #0x0",
+      "0x158646: movs r1, #0x2c",
+      "0x158648: ldrsb r2, [r5,r1]",
+      "0x15864a: adds r5, #0x2c",
+      "0x15864c: cmp r2, #0x7",
+      "0x15864e: bge 0x001586f2",
+      "0x158650: movs r3, #0x0",
+      "0x158652: str r3, [sp,#0x4]",
+      "0x158654: movs r1, #0xc4",
+      "0x158656: str r1, [sp,#0x8]",
+      "0x158658: cmp r2, #0x0",
+      "0x15865a: bne 0x00158684",
+      "0x15865c: movs r1, #0x2",
+      "0x15865e: bl 0x00146dda",
+      "0x158662: str r0, [r4,#0x30]",
+      "0x158664: cmp r0, #0x0",
+      "0x158666: beq 0x00158676",
+      "0x158668: bl 0x00196d9e",
+      "0x15866c: ldr r0, [r4,#0x30]",
+      "0x15866e: bl 0x00196e30",
+      "0x158672: movs r3, #0x0",
+      "0x158674: str r3, [r4,#0x30]",
+      "0x158676: ldrh r3, [r4,#0x26]",
+      "0x158678: lsrs r3, r3, #0x10",
+      "0x15867a: lsls r3, r3, #0x10",
+      "0x15867c: movs r0, #0x19",
+      "0x15867e: orrs r3, r0",
+      "0x158680: strh r3, [r4,#0x26]",
+      "0x158682: ldr r1, [sp,#0x8]",
+      "0x158684: add r0, sp,#0x4",
+      "0x158686: movs r3, #0x2",
+      "0x158688: movs r2, #0x1",
+      "0x15868a: bl 0x000f2364",
+      "0x15868e: ldr r3, [sp,#0x4]",
+      "0x158690: cmp r3, #0x0",
+      "0x158692: beq 0x001586ea",
+      "0x158694: add r1, sp,#0x8",
+      "0x158696: movs r0, #0x0",
+      "0x158698: ldrsb r0, [r5,r0]",
+      "0x15869a: ldr r2, [0x0015872c]",
+      "0x15869c: adds r0, r0, r2",
+      "0x15869e: movs r2, #0x0",
+      "0x1586a0: bl 0x00174518",
+      "0x1586a4: adds r6, r0, #0x0",
+      "0x1586a6: movs r3, #0xc4",
+      "0x1586a8: str r3, [sp,#0x8]",
+      "0x1586aa: cmp r6, #0x0",
+      "0x1586ac: blt 0x001586de",
+      "0x1586ae: movs r2, #0x0",
+      "0x1586b0: movs r1, #0x4",
+      "0x1586b2: bl 0x00014e64",
+      "0x1586b6: movs r4, #0x0",
+      "0x1586b8: ldr r2, [sp,#0x8]",
+      "0x1586ba: ldr r1, [sp,#0x4]",
+      "0x1586bc: adds r0, r6, #0x0",
+      "0x1586be: bl 0x00174390",
+      "0x1586c2: movs r3, #0x1",
+      "0x1586c4: str r3, [sp,#0x0]",
+      "0x1586c6: movs r3, #0x62",
+      "0x1586c8: adds r2, r4, #0x0",
+      "0x1586ca: adds r2, #0x9",
+      "0x1586cc: movs r1, #0xf",
+      "0x1586ce: ldr r0, [sp,#0x4]",
+      "0x1586d0: bl 0x00147444",
+      "0x1586d4: bl 0x0014750e",
+      "0x1586d8: adds r4, #0x1",
+      "0x1586da: cmp r4, #0x2e",
+      "0x1586dc: blt 0x001586b8",
+      "0x1586de: adds r0, r6, #0x0",
+      "0x1586e0: bl 0x00014e1c",
+      "0x1586e4: ldr r0, [sp,#0x4]",
+      "0x1586e6: bl 0x000f23a2",
+      "0x1586ea: ldrb r3, [r5,#0x0]",
+      "0x1586ec: adds r3, #0x1",
+      "0x1586ee: strb r3, [r5,#0x0]",
+      "0x1586f0: b 0x0015870e",
+      "0x1586f2: ldrh r3, [r4,#0x26]",
+      "0x1586f4: lsrs r3, r3, #0x10",
+      "0x1586f6: lsls r3, r3, #0x10",
+      "0x1586f8: strh r3, [r4,#0x26]",
+      "0x1586fa: movs r3, #0x0",
+      "0x1586fc: strb r3, [r5,#0x0]",
+      "0x1586fe: ldr r3, [0x00158730]",
+      "0x158700: str r3, [sp,#0xc]",
+      "0x158702: add r1, sp,#0xc",
+      "0x158704: ldr r2, [0x00158728]",
+      "0x158706: ldr r0, [r2,#0x0]",
+      "0x158708: movs r2, #0x0",
+      "0x15870a: bl 0x000132b0",
+      "0x15870e: movs r0, #0x0",
+      "0x158710: add sp, #0x14",
+      "0x158712: pop {r4,r5,r6,pc}"
+    ]
+  }
+]

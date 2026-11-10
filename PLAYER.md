@@ -21,15 +21,22 @@ The shell is drawn from the product photo in `ref/` and arranged horizontally.
 The EXE/window icon is the original `ref/DEVICON.FIL` (12 icon variants).
 The five home categories animate in Dark, Blue and Pink themes, with bubbles
 on the left: Music, Recordings, Folder View, Settings, Now/Last Played.
+Radio is a sixth, hidden home item after Now/Last Played. Keep pressing Down,
+or press Up once from Music. It has no highlighted bubble on the five-dot rail.
 Home geometry, centered list selection, folder icons and submenu tables now
 follow recovered firmware code. Menus use original graphics, both bitmap font
 sizes and all 24 language tables. Other desktop behavior remains an adaptation;
 this is not a claim of complete pixel or behavioral lockstep. Boot runs at half
 the first build's speed (170 ms per frame), followed by Updating… for three
-seconds. Shutdown shows Bye for 1.2 seconds.
+seconds. Updating centers the label vertically, shows 0-100% below it and a
+progress bar along the bottom edge.
+Shutdown shows Bye, then the original expanding ring of dots. The slower
+desktop sequence holds Bye for one second and each animation frame for 500 ms
+(4.5 seconds total).
 
 The playback screen follows recovered title/metadata/time/progress/counter
 positions and includes the original 10-pixel time and 5-pixel counter fonts.
+The track counter pads both numbers to four digits, for example 0001/0032.
 Artist and album alternate on the metadata row. Radio uses the original
 vertical scale and 24-pixel digits; recording uses the original filename,
 time, microphone and battery placements. Animation cadence and desktop audio
@@ -76,8 +83,8 @@ this desktop player's current scope.
 
 ## Internet radio through virtual FM frequencies
 
-This physical model had no FM radio. Internet Radio appears as a desktop extra
-at the end of Settings only when Playlists/radio.json contains stations.
+This physical model had no FM radio. The requested internet-radio adapter is
+always available as the hidden sixth home item, including with an empty table.
 It maps virtual 87.5-108.0 MHz positions to HTTP(S) audio streams. Edit the file:
 
 ```json
@@ -154,8 +161,9 @@ smoke test. Results go to `gen/player-tests/`.
 
 `make test-ui` runs the actual portable interface implementation natively on
 Linux with fake audio/microphone services. It covers navigation, all 24 language
-tables, 15 icon/theme screens, original folder/USB pixels at recovered coordinates,
-Updating timing, play controls, settings, display timers, JSON/MHz
+tables, 18 icon/theme screens, original folder/USB pixels at recovered coordinates,
+Updating layout/percentages/timing, zero-padded counters, hidden radio navigation,
+play controls, settings, display timers, JSON/MHz
 tuning, save/discard recording flow, lock, a 5,000-song library and EQ DSP checks.
 It emits rendered PPM screen evidence under gen/ui-tests/fixture. These tests do
 not establish real microphone capture or live-stream connectivity on Windows.

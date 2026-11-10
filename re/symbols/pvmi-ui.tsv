@@ -28,3 +28,5 @@
 0x157532	ui_recording_event	Observed pause/save and recording state handling	F
 0x15963e	ui_radio_scale_paint	Observed background and arrow placement with percent quantization	F
 0x19707c	ui_format_clock	Observed hour omission and padded minutes/seconds	F
+0x15876c	ui_shutdown_create	Observed centered Bye text and initial timer count 50	F
+0x15863e	ui_shutdown_animation_tick	Observed group-8 frames 0..6 at 15,9; interval count 25; completion event	F

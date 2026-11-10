@@ -10,6 +10,9 @@
 #include <sstream>
 
 namespace player {
+// Preserve the physical five-dot rail; the requested internet radio is a sixth stop.
+static constexpr std::array<int,6> homeFamilies={0,2,3,4,5,1};
+static constexpr uint64_t shutdownHold=1000,shutdownFrame=500,shutdownDuration=shutdownHold+7*shutdownFrame;
 static std::wstring timeText(double seconds) {
     int s=std::max(0,int(seconds));auto two=[](int n){return(n<10?L"0":L"")+std::to_wstring(n);};return(s>=3600?std::to_wstring(s/3600)+L":"+two(s/60%60):std::to_wstring(s/60))+L":"+two(s%60);
 }
@@ -46,7 +49,7 @@ void Interface::setLibrary(std::vector<Song> songs) {
     library=std::move(songs);scanning=false;
     songLookup_.clear();for(size_t i=0;i<library.size();i++)songLookup_[library[i].path]=i;
     cachedDirectory_.clear();
-    int count=frame_.page==Page::Home?5:int(items().size());frame_.selected=std::clamp(frame_.selected,0,std::max(0,count-1));frame_.scroll=std::min(frame_.scroll,frame_.selected);
+    int count=frame_.page==Page::Home?int(homeFamilies.size()):int(items().size());frame_.selected=std::clamp(frame_.selected,0,std::max(0,count-1));frame_.scroll=std::min(frame_.scroll,frame_.selected);
 }
 void Interface::navigate(Page page) {
     transportDirection_=0;
@@ -147,7 +150,6 @@ std::vector<Interface::Item> Interface::items() {
     case Page::Settings:
         open(108,Page::PlayMode);open(119,Page::Sound);open(134,Page::Display);open(147,Page::Language);open(172,Page::Information);open(6,Page::Legal);
         rows.push_back({tr(178),[this]{confirm(tr(179)+L" "+tr(180),[this]{settings=Settings{};applySettings();notice(tr(181));});}});
-        if(!stations.empty())rows.push_back({L"Internet Radio",[this]{remember();radio=true;backend_.stop();navigate(Page::Radio);radioCandidate_=-2;tuneAt_=now_+250;frequency_=stations.front().tenths;}});
         break;
     case Page::PlayMode:open(109,Page::Repeat);open(110,Page::Shuffle);break;
     case Page::Repeat:
@@ -220,6 +222,9 @@ void Interface::select() {
                 if(!radio&&!backend_.audio().playing&&!lastPlayed.empty()){auto path=lastPlayed;double position=resumePosition;playQueue({path},0);pendingResume_=position;}
                 else navigate(radio?Page::Radio:Page::Playing);
                 break;
+            case 5:
+                if(!radio){remember();radio=true;backend_.stop();radioCandidate_=-2;tuneAt_=now_+250;if(!stations.empty())frequency_=stations.front().tenths;}
+                navigate(Page::Radio);break;
         }
         return;
     }
@@ -231,7 +236,7 @@ void Interface::select() {
     auto rows=items();if(frame_.selected>=0&&frame_.selected<int(rows.size()))rows[frame_.selected].action();
 }
 void Interface::move(int delta) {
-    int count=frame_.page==Page::Home?5:int(items().size());
+    int count=frame_.page==Page::Home?int(homeFamilies.size()):int(items().size());
     if(!count)return;
     frame_.selected=(frame_.selected+delta+count)%count;
     if(frame_.selected<frame_.scroll)frame_.scroll=frame_.selected;
@@ -328,8 +333,14 @@ void Interface::releaseTransport() {
     int direction=transportDirection_;bool seeking=transportRepeats_>0;transportDirection_=0;
     if(direction&&!seeking&&frame_.page==Page::Playing)input(direction<0?Key::Previous:Key::Next);
 }
+void Interface::shutdown() {
+    if(shuttingDown_)return;
+    shuttingDown_=true;shutdownAt_=now_;transportDirection_=0;
+}
+bool Interface::shutdownFinished() const { return shuttingDown_&&now_-shutdownAt_>=shutdownDuration; }
 void Interface::tick(uint64_t millis) {
     now_=millis;if(!firstTick_){firstTick_=now_?now_:1;lastInput_=selectedAt_=now_;}
+    if(shuttingDown_)return;
     if(booting_&&now_>firstTick_+4400)booting_=false;
     if(updating_&&now_>=firstTick_+7400)updating_=false;
     dim_=settings.backlight>0&&now_-lastInput_>uint64_t(settings.backlight)*1000;
@@ -395,7 +406,8 @@ void Interface::marquee(int x,int y,const std::wstring& value,uint32_t color,int
 }
 void Interface::status(const TrackInfo& info) {
     image(2*256+(transportRepeats_&&transportDirection_?(transportDirection_<0?1:3):info.paused?4:info.playing?5:2),5,35);
-    number(5,55,queueIndex_>=0?std::to_wstring(queueIndex_+1):L"0",0xffffff,true,2,20);number(25,55,L"/",0xffffff,true);number(31,55,std::to_wstring(queue_.size()),0xffffff,true,0,20);
+    auto padded=[](size_t value){auto s=std::to_wstring(value);return std::wstring(s.size()<4?4-s.size():0,L'0')+s;};
+    number(5,55,padded(queueIndex_>=0?size_t(queueIndex_+1):0),0xffffff,true,2,20);number(25,55,L"/",0xffffff,true);number(31,55,padded(queue_.size()),0xffffff,true,0,20);
     if(settings.repeat)image(2*256+(settings.repeat==2?9:12)+settings.theme,55,52);
     if(settings.shuffle)image(2*256+15+settings.theme,70,52);
     if(settings.equalizer)image(2*256+6+settings.theme,85,52);
@@ -405,16 +417,18 @@ void Interface::render() {
     screen.fill(0xff000000|background());auto info=backend_.audio();
     const uint32_t primary[]={0xffcec2bc,0xfff8d6c2,0xffead3fc},selectedColors[]={0xff000000,0xff9c613e,0xff9583d8};
     uint32_t fg=firmwareColor(settings.theme==2?primary[2]:0xffffffff),selectedColor=firmwareColor(selectedColors[settings.theme]),accent=settings.theme?0xffffff:0x36cbe8;
-    if(shuttingDown_){center(25,tr(229),fg,true);return;}
+    if(shuttingDown_){screen.fill(0xff000000);uint64_t elapsed=now_-shutdownAt_;if(elapsed<shutdownHold)center(25,tr(229),0xffffff,true);else image(8*256+unsigned(std::min(uint64_t(7),(elapsed-shutdownHold)/shutdownFrame)),15,9);return;}
     if(blank_) {screen.fill(0xff000000);return;}
     if(booting_){image(7*256+std::min(20,int((now_-firstTick_)/170)),0,0);return;}
     if(updating_) {
-        screen.fill(0xff000000);image(5*256+unsigned((now_/100)%8),56,3);center(24,tr(228),fg);
-        image(7*256+34,5,46);int progress=int(std::clamp((double(now_)-double(firstTick_)-4400)/3000,0.0,1.0)*118);image(7*256+24,5,46,progress,2);return;
+        screen.fill(0xff000000);center(26,tr(228),0xffffff);
+        int percent=int(std::clamp((double(now_)-double(firstTick_)-4400)*100/2850,0.0,100.0));
+        center(43,std::to_wstring(percent)+L"%",0xffffff);
+        image(7*256+34,5,60);image(7*256+24,5,60,118*percent/100,2);return;
     }
     if(frame_.page==Page::Home) {
-        const int families[]={0,2,3,4,5};int family=families[std::clamp(frame_.selected,0,4)],base=9+settings.theme*36,step=std::min(5,int((now_-selectedAt_)/50));
-        image(settings.theme,9,8);image(base+family*6+step,48,0);image(6+settings.theme,5,4+frame_.selected*11);image(1*256+4,110,2);
+        int family=homeFamilies[std::clamp(frame_.selected,0,int(homeFamilies.size())-1)],base=9+settings.theme*36,step=std::min(5,int((now_-selectedAt_)/50));
+        image(settings.theme,9,8);image(base+family*6+step,48,0);if(frame_.selected<5)image(6+settings.theme,5,4+frame_.selected*11);image(1*256+4,110,2);
         auto title=tr(family==5&&!info.playing?13:7+family);
         int x=28+std::max(0,(90-textWidth(title,true))/2);marquee(x,48,title,firmwareColor(primary[settings.theme]),118-x,true);
     } else if(frame_.page==Page::Playing) {

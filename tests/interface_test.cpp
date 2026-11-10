@@ -36,20 +36,27 @@ static void requireAsset(const Interface& ui,unsigned id,int x,int y) {
         assert(ui.screen[(y+row)*128+x+col]==rgb);
     }
 }
+template<size_t N>static void requireText(const Interface& ui,const Asset(&font)[N],const std::wstring& value,int x,int y) {
+    auto glyph=[&](wchar_t c){auto* p=std::find_if(std::begin(font),std::end(font),[c](const auto& a){return a.id==unsigned(c);});assert(p!=std::end(font));return p;};
+    if(x<0){int width=0;for(auto c:value)width+=glyph(c)->w;x=(128-width)/2;}
+    for(auto c:value){auto* a=glyph(c);for(unsigned row=0;row<a->h;row++)for(unsigned col=0;col<a->w;col++){bool ink=fontBits[a->offset+row*((a->w+7)/8)+col/8]&(0x80>>(col%8));assert(ui.screen[(y+row)*128+x+col]==(ink?0xffffffffu:0xff000000u));}x+=a->w;}
+}
 int main(int argc,char** argv) {
     assert(argc==2);fs::path root=fs::absolute(argv[1]);fs::create_directories(root/"Music"/"Album");
     std::ofstream(root/"Music"/"one.wav").put(0);std::ofstream(root/"Music"/"Album"/"two.flac").put(0);
     Fake backend;Interface ui(backend,root/"Music");ui.tick(100);ui.skipBoot();
-    {Fake b;Interface boot(b,root/"Music");boot.tick(100);assert(boot.booting());boot.tick(2300);assert(boot.booting());boot.tick(4501);assert(!boot.booting()&&boot.updating());dump(boot,root/"updating.ppm");boot.input(Key::Select);assert(boot.page()==Page::Home);boot.click(60,40);assert(boot.page()==Page::Home);boot.tick(7499);assert(boot.updating());boot.tick(7500);assert(!boot.updating());boot.input(Key::Select);assert(boot.page()==Page::Music);}
+    {Fake b;Interface boot(b,root/"Music");boot.tick(100);assert(boot.booting());boot.tick(2300);assert(boot.booting());boot.tick(4501);assert(!boot.booting()&&boot.updating());dump(boot,root/"updating.ppm");requireText(boot,glyphs,L"Updating\u2026",-1,26);requireText(boot,glyphs,L"0%",-1,43);boot.input(Key::Select);assert(boot.page()==Page::Home);boot.click(60,40);assert(boot.page()==Page::Home);boot.tick(5925);dump(boot,root/"updating-50.ppm");requireText(boot,glyphs,L"50%",-1,43);assert(boot.screen[60*128+63]!=boot.screen[60*128+64]);boot.tick(7350);dump(boot,root/"updating-100.ppm");requireText(boot,glyphs,L"100%",-1,43);requireAsset(boot,7*256+24,5,60);boot.tick(7499);assert(boot.updating());boot.tick(7500);assert(!boot.updating());boot.input(Key::Select);assert(boot.page()==Page::Music);}
+    {Fake b;Interface emptyRadio(b,root/"Music");emptyRadio.tick(100);emptyRadio.skipBoot();emptyRadio.input(Key::Up);assert(emptyRadio.selection()==5);emptyRadio.input(Key::Select);assert(emptyRadio.page()==Page::Radio);emptyRadio.tick(1000);assert(b.plays==0);emptyRadio.input(Key::Back);assert(emptyRadio.page()==Page::Home&&emptyRadio.selection()==5);emptyRadio.input(Key::Down);assert(emptyRadio.selection()==0);}
+    {Fake b;Interface bye(b,root/"Music");bye.tick(100);bye.skipBoot();bye.shutdown();dump(bye,root/"shutdown-bye.ppm");auto first=bye.screen;bye.tick(1099);bye.render();assert(bye.screen==first&&!bye.shutdownFinished());for(int frame=0;frame<7;frame++){bye.tick(1100+frame*500);dump(bye,root/("shutdown-"+std::to_string(frame)+".ppm"));requireAsset(bye,8*256+frame,15,9);assert(!bye.shutdownFinished());}bye.tick(4599);assert(!bye.shutdownFinished());bye.tick(4600);bye.render();assert(bye.shutdownFinished()&&std::all_of(bye.screen.begin(),bye.screen.end(),[](auto p){return p==0xff000000;}));assert(b.plays==0);}
     Song a{root/"Music"/"one.wav",{}},b{root/"Music"/"Album"/"two.flac",{}};a.tags.title=L"First song";a.tags.artist=L"Artist A";a.tags.album=L"Album A";b.tags.title=L"Second song";b.tags.artist=L"Artist B";b.tags.album=L"Album B";
     ui.setLibrary({a,b});
     uint64_t clock=1000;
-    for(int theme=0;theme<3;theme++)for(int icon=0;icon<5;icon++) {
-        ui.settings.theme=theme;ui.input(Key::Home);for(int i=0;i<icon;i++)ui.input(Key::Down);ui.tick(clock+=1000);dump(ui,root/("home-"+std::to_string(theme)+"-"+std::to_string(icon)+".ppm"));requireAsset(ui,6+theme,5,4+icon*11);requireAsset(ui,1*256+4,110,2);
+    for(int theme=0;theme<3;theme++)for(int icon=0;icon<6;icon++) {
+        ui.settings.theme=theme;ui.input(Key::Home);for(int i=0;i<icon;i++)ui.input(Key::Down);ui.tick(clock+=1000);dump(ui,root/("home-"+std::to_string(theme)+"-"+std::to_string(icon)+".ppm"));if(icon<5)requireAsset(ui,6+theme,5,4+icon*11);else requireAsset(ui,theme,9,8);requireAsset(ui,1*256+4,110,2);
     }
-    ui.input(Key::Home);ui.input(Key::Up);assert(ui.selection()==4);ui.setLibrary({a,b});assert(ui.selection()==4);ui.input(Key::Down);assert(ui.selection()==0);
+    ui.input(Key::Home);ui.input(Key::Up);assert(ui.selection()==5);ui.setLibrary({a,b});assert(ui.selection()==5);ui.input(Key::Down);assert(ui.selection()==0);
     ui.settings.theme=0;ui.input(Key::Home);ui.input(Key::Select);assert(ui.page()==Page::Music);assert(ui.labels().size()==4);dump(ui,root/"music-menu.ppm");
-    ui.input(Key::Select);assert(ui.page()==Page::Songs);ui.input(Key::Select);assert(ui.page()==Page::Playing&&backend.plays==1);dump(ui,root/"now-playing.ppm");
+    ui.input(Key::Select);assert(ui.page()==Page::Songs);ui.input(Key::Select);assert(ui.page()==Page::Playing&&backend.plays==1);dump(ui,root/"now-playing.ppm");requireText(ui,counterGlyphs,L"0001/0002",5,55);
     ui.input(Key::Select);assert(backend.state.paused);ui.input(Key::Select);assert(!backend.state.paused);
     ui.input(Key::SeekForward);assert(backend.seekPosition==5);ui.input(Key::Next);assert(ui.queueIndex()==1);
     {int plays=backend.plays;ui.pressTransport(1);ui.tick(clock+=100);assert(backend.plays==plays);ui.releaseTransport();assert(backend.plays==plays+1);plays=backend.plays;
@@ -71,7 +78,7 @@ int main(int argc,char** argv) {
     ui.settings.backlight=10;ui.settings.screenOff=20;ui.tick(90000);ui.render();assert(std::all_of(ui.screen.begin(),ui.screen.end(),[](auto p){return p==0xff000000;}));ui.input(Key::Select);ui.render();assert(std::any_of(ui.screen.begin(),ui.screen.end(),[](auto p){return p!=0xff000000;}));ui.settings.backlight=ui.settings.screenOff=0;
     {std::ofstream out(root/"radio.json");out<<R"({"stations":[{"mhz":99.5,"name":"Test \u017D","url":"https://example.invalid/audio"},{"mhz":89.0,"name":"Other","url":"http://example.invalid/other"}]})";}
     std::wstring error;auto stations=readRadioConfig(root/"radio.json",error);assert(error.empty()&&stations.size()==2&&stations[0].tenths==890&&stations[1].name.back()==L'\u017D');
-    ui.loadStations(root/"radio.json");ui.input(Key::Home);ui.input(Key::Down);ui.input(Key::Down);ui.input(Key::Down);ui.input(Key::Select);assert(ui.page()==Page::Settings&&ui.labels().size()==8);ui.input(Key::Up);ui.input(Key::Select);assert(ui.page()==Page::Radio);ui.tick(91000);assert(backend.source==L"http://example.invalid/other");int plays=backend.plays;dump(ui,root/"radio.ppm");ui.input(Key::Next);ui.tick(92000);assert(backend.plays==plays);ui.input(Key::SeekForward);ui.tick(93000);assert(backend.source==L"https://example.invalid/audio");
+    ui.loadStations(root/"radio.json");ui.navigate(Page::Settings);assert(ui.labels().size()==7);ui.input(Key::Home);ui.input(Key::Up);assert(ui.selection()==5);ui.input(Key::Select);assert(ui.page()==Page::Radio);ui.tick(91000);assert(backend.source==L"http://example.invalid/other");int plays=backend.plays;dump(ui,root/"radio.ppm");ui.input(Key::Next);ui.tick(92000);assert(backend.plays==plays);ui.input(Key::SeekForward);ui.tick(93000);assert(backend.source==L"https://example.invalid/audio");
     for(auto invalid:{R"({"stations":[{"mhz":89.01,"name":"a","url":"https://example.invalid"}]})",R"({"stations":[{"mhz":89.0,"name":"a","url":"file:///secret"}]})",R"({"stations":[{"mhz":89.0,"name":"a","url":"https://a"},{"mhz":89.0,"name":"b","url":"https://b"}]})",R"({"stations":[],})",R"({"stations":[{"mhz":1e999,"name":"a","url":"https://a"}]})"}) {std::ofstream(root/"bad-radio.json")<<invalid;assert(readRadioConfig(root/"bad-radio.json",error).empty()&&!error.empty());}
     ui.input(Key::Home);ui.input(Key::Next);ui.input(Key::Select);assert(ui.page()==Page::Recordings);ui.input(Key::Select);assert(backend.mic.active&&backend.mic.path.parent_path()==root/"Recordings"/"Voice");dump(ui,root/"recording.ppm");ui.input(Key::Select);assert(backend.mic.paused);ui.input(Key::Back);assert(ui.page()==Page::Confirm);ui.input(Key::Select);assert(backend.saves==1&&backend.discards==0&&!backend.mic.active);
     ui.navigate(Page::Recordings);ui.input(Key::Select);ui.input(Key::Back);ui.input(Key::Next);ui.input(Key::Select);assert(backend.discards==1&&!backend.mic.active);
@@ -82,5 +89,5 @@ int main(int argc,char** argv) {
     // A large library must share queue storage rather than copying it per row.
     std::vector<Song> large;for(int i=0;i<5000;i++)large.push_back({root/"Music"/(std::to_string(i)+".mp3"),{}});
     ui.setLibrary(std::move(large));ui.navigate(Page::Songs);assert(ui.labels().size()==5000);ui.render();
-    std::cout<<"PASS original assets and 15 home/theme screens; recovered home/menu navigation and folder icons; Updating timing; 24 languages, pause/seek/next; settings and EQ; sleep/wake; JSON validation and MHz tuning; microphone save/discard and sibling folders; lock; DSP bypass/stability\n";
+    std::cout<<"PASS original assets and 18 home/theme screens; hidden sixth radio with five-dot rail; zero-padded counters; centered Updating and 0/50/100% bottom progress; original shutdown dot frames and duration; 24 languages, pause/seek/next; settings and EQ; sleep/wake; JSON validation and MHz tuning; microphone save/discard and sibling folders; lock; DSP bypass/stability\n";
 }

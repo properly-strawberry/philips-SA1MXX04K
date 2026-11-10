@@ -74,7 +74,8 @@ public:
     bool booting() const { return booting_; }
     bool updating() const { return updating_; }
     void skipBoot() { booting_=false; updating_=false; }
-    void shutdown() { shuttingDown_=true; transportDirection_=0; }
+    void shutdown();
+    bool shutdownFinished() const;
     void navigate(Page page);
     std::wstring currentTitle();
     std::vector<std::wstring> labels();
@@ -92,6 +93,7 @@ private:
     uint64_t now_=0,firstTick_=0,selectedAt_=0,lastInput_=0,noticeUntil_=0,tuneAt_=0,volumeUntil_=0;
     bool booting_=true,finishedHandled_=false,dim_=false,blank_=false;
     bool shuttingDown_=false;
+    uint64_t shutdownAt_=0;
     bool updating_=true;
     int transportDirection_=0,transportRepeats_=0;
     uint64_t transportPressed_=0,transportTick_=0;

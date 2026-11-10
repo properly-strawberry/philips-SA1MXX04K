@@ -166,7 +166,8 @@ earlier simple five-view interface description above.
 - Native menu state is reconstructed/adapted, not lifted firmware logic.
   `re/docs/UI_RECONSTRUCTION.md` distinguishes resource evidence, adaptations
   and unknowns. Do not call the desktop program a lockstep emulator.
-- Five animated home categories and Dark/Blue/Pink themes; Music/Artists/Albums,
+- Five original home categories plus an always-available hidden sixth Radio
+  item, with the original five-dot rail; Dark/Blue/Pink themes; Music/Artists/Albums,
   folder browsing, Playlist-on-the-Go, playback options,
   play modes, real EQ/volume limit, display timers/rotation, language, information,
   settings reset, recording screens and virtual radio tuner/presets.
@@ -192,11 +193,12 @@ earlier simple five-view interface description above.
 - Original icon/PE resources: `src/player.rc`, compiled by MinGW windres.
   The built PE was inspected and contains 12 ICON resources and a GROUP_ICON.
 - `make test-ui` passes the actual interface with fake backend services,
-  including 15 home/theme renders, 24 languages, navigation, play controls,
+  including 18 home/theme renders, 24 languages, navigation, play controls,
   sleep/wake, JSON/MHz tuning, voice save/discard, lock, a 5000-song list and
   DSP checks. Generated native screens: `gen/ui-tests/fixture/*.ppm`.
 - Boot frames last 170 ms, followed by Updating… for three seconds. Shutdown
-  shows Bye for 1.2 seconds. M opens options; hold the lower shell button or
+  holds Bye for 1 second, then plays original expanding-dot frames 8.0..8.6
+  at (15,9), 500 ms each (4.5 seconds total). M opens options; hold the lower shell button or
   press L for lock. F9 previews the actual USB screen; F10 the charge choices.
 
 ### Deep firmware bookmark - 2026-11-10
@@ -208,8 +210,10 @@ and 1497 host functions. Both sessions were closed; source bytes are unchanged.
 
 - Home constructor 0x152db4, paint 0x152934, event 0x152982: bubbles at (9,8),
   category at (48,0), title (28,48), battery (110,2). RAM 0x75a8 gates FM.
-  The owner confirms NO radio: default home has five items, not six. Internet
-  radio stays a desktop Settings extra only when radio.json is nonempty.
+  The owner confirms NO physical radio: recovered firmware has five items.
+  Her later desktop preference explicitly adds Radio as the hidden sixth stop
+  AFTER Now/Last Played, with no selected bubble on its five-dot rail. It must
+  remain reachable even with empty radio.json; it is not a Settings entry.
 - Static menu builder 0x150264 supplies actual submenu tables. Music has only
   All Songs/Artists/Albums/Playlists. Display has Theme/Screen off/Rotation.
 - Centered lists: text rows y8/29/50, selection bar (0,25). Folder normal images
@@ -243,6 +247,16 @@ and 1497 host functions. Both sessions were closed; source bytes are unchanged.
   seek acceleration/cancellation, click/clamp, no seek without duration, and
   Last Played after EOF. Decoder seek also resets EQ state. Windows test script
   now checks exact WAV/FLAC PCM after a one-second seek; not run by the agent.
+- Owner's later corrections: track counters use four zero-padded digits on
+  both sides (0001/0032). Updating has its label vertically centered, percentage
+  underneath and the original progress strip along the bottom (y60), no spinner.
+  It reaches 100% during its final 150 ms and exits after three seconds.
+- Shutdown was missing its animation: constructor 0x15876c centers Bye in
+  (2,25,124,14); timer 0x15863e removes the text, then writes 98x46 group-8
+  frames 0..6 at (15,9). Initial timer count is 50, later 25; exact tick length
+  remains unresolved. Desktop uses the slower 1000/500 ms timing and waits for
+  the complete animation before closing the window. shutdown-dossiers.json
+  preserves the decompilation; REA session closed after this focused lookup.
 
 Next: trace remaining playback/recording events, original timer cadence,
 feature flag persistence and service-menu entry conditions. Keep the

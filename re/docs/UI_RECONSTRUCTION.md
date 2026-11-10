@@ -59,15 +59,19 @@ GROUP_ICON and one VERSION resource. The window loads that icon group.
 
 Recovered constructors now establish the home and centered-list geometry,
 folder icon selection, theme palettes, font spacing and actual submenu tables.
-See FIRMWARE_UI.md for addresses, evidence and exact values. Internet radio is
-an opt-in Settings extra, enabled by a nonempty JSON table; original home has
-five categories. Native input/services, some screen layouts, EQ coefficients,
+See FIRMWARE_UI.md for addresses, evidence and exact values. At the owner's
+request, internet radio is the hidden sixth home item after Now/Last Played,
+always reachable even with an empty table. The original five-dot rail stays;
+no bubble is highlighted for Radio. Native input/services, some screen layouts, EQ coefficients,
 capacity reporting and I/O remain desktop adaptations. Requested timing changes
-are 170 ms boot frames, three seconds of Updating… and 1.2 seconds of Bye.
+are 170 ms boot frames and three seconds of Updating… with centered text,
+0-100% beneath it and a bottom progress strip. Track counters pad to four digits.
+Shutdown uses original group-8 expanding dots after Bye, 4.5 seconds total at
+the requested slower pace. The window waits for the sequence to finish.
 
 ## Tests and limits
 
-`make test-ui` passes navigation, 15 home/theme renders, all 24 languages,
+`make test-ui` passes navigation, 18 home/theme renders, all 24 languages,
 play/pause/seek/next, settings/EQ, sleep/wake, JSON validation, virtual frequency
 tuning, recording save/discard, sibling recording paths, lock and a 5,000-song
 library. Services are fake in this test: no microphone is accessed and no network

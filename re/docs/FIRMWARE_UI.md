@@ -44,6 +44,12 @@ one when indexing the extracted text tables. Presence of FM assets/text does
 not mean this physical model has a radio. The owner confirms hers did not.
 The flag's persistence/source and hardware detection are not yet established.
 
+Desktop preference (owner correction after the first reconstruction): preserve
+the five-dot rail and append internet Radio as a hidden sixth home stop after
+Now/Last Played. That stop has no highlighted dot and is reachable with an empty
+station table. This is an intentional desktop extension, not a recovered sixth
+item for the no-radio hardware variant.
+
 | Element | Rectangle / placement |
 | --- | --- |
 | Five-dot rail | resource 0.0 + theme, at (9,8) |
@@ -193,7 +199,7 @@ children 0x159ede/0x159ada establish the following layout:
 | Elapsed time | (18,37), 40x10, numeric font group 30 |
 | Duration | (83,37), 40x10, right aligned |
 | Progress bar | (5,48), 118x2, white fill |
-| Current track / total | (5,55), (25,55), (31,55), five-pixel font group 32 |
+| Current track / total | (5,55), (25,55), (31,55), five-pixel font group 32, zero-pad each number to four digits |
 | Repeat, shuffle, EQ | (55,52), (70,52), (85,52), shown only when enabled |
 | Battery | (107,51), 16x11 |
 
@@ -236,6 +242,27 @@ Evidence: `ev_8e9c8d7235f41f9af2e121615d72fe7127a69ab68b31686ae2c1507e8c77ee28`,
 `ev_9c93b37f12db8a217dd6c0aa228f779e90ed62da460b93cdbebc6b37386af1a7`,
 `ev_013c2d7dd03b344eecbe2f8c0917a9045dd38b3e2046333b019faf7e94bff036`,
 `ev_3d6280046ed9f636d08b3e7a8c7d355d0f45f05532adbdb474b81d6eccc96740`.
+
+## Shutdown animation
+
+Observed constructor 0x15876c creates the one-based label 0xe6 (Bye) in a
+centered text widget at (2,25), 124x14, white on black. It initializes its timer
+count to 50. On its first tick, handler 0x15863e destroys that text widget and
+sets the timer count to 25. It then reads group-8 bitmap frames 0..6, writing
+98x46 pixels at (15,9), and posts a completion event after the last frame.
+The bitmaps show a ring of dots expanding toward the screen edges; these are
+the original shutdown animation, not a generic loading spinner. Group 8 frame
+7 is blank; the handler's seven-frame loop does not draw it before completion.
+
+Desktop timing is 1000 ms for Bye and 500 ms per bitmap, preserving the
+observed 2:1 hold/frame ratio at the requested slower pace. The window closes
+only after all seven frames (4500 ms total). Firmware tick duration is still
+unknown, so those wall-clock timings are an adaptation. Native tests check each
+original frame at the recovered coordinates and the completion boundary.
+
+Evidence: `ev_5de526df939487756eb8a2b7f050b2cc28d765151d78d33dfcd6c475280f2725`,
+`ev_6aef8fb6d24255da5b404333997c9add4ee7b606cce53e4ced3f6ed60aee7e0f`.
+Code and identity are retained in shutdown-dossiers.json.
 
 ## Saved evidence and remaining limits
 
