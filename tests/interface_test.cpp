@@ -150,18 +150,19 @@ static void dialogTests(const fs::path& root) {
 }
 static void volumeTests(const fs::path& root) {
     for(int theme=0;theme<3;theme++){Fake b;Interface v(b,root/"Music");v.tick(100);v.skipBoot();v.navigate(Page::Playing);v.settings.theme=theme;v.settings.volume=50;v.applySettings();v.input(Key::VolumeUp);assert(v.settings.volume==55&&b.vol==55);dump(v,root/("volume-"+std::to_string(theme)+".ppm"));requireAsset(v,4*256,17,26);requireAsset(v,4*256+1+theme,95,26);requireAsset(v,4*256+4,65,21);requireAsset(v,4*256+8,110,21);requireAsset(v,4*256+6,1,26);requireAsset(v,4*256+7,115,26);auto popup=v.screen;v.tick(1500);v.render();assert(v.screen!=popup);}
-    Fake b;Interface v(b,root/"Music");v.tick(100);v.skipBoot();v.settings.volumeLimit=35;v.settings.volume=35;v.applySettings();v.navigate(Page::VolumeLimit);v.input(Key::VolumeUp);assert(b.vol>35&&v.settings.volumeLimit==35&&v.settings.volume==35);v.input(Key::Back);assert(b.vol==35&&v.settings.volumeLimit==35);v.navigate(Page::VolumeLimit);v.input(Key::Down);v.input(Key::Select);assert(v.settings.volumeLimit==32&&v.settings.volume==32&&b.vol==32);
+    Fake b;Interface v(b,root/"Music");v.tick(100);v.skipBoot();v.settings.volumeLimit=35;v.settings.volume=35;v.applySettings();v.navigate(Page::VolumeLimit);v.input(Key::VolumeUp);assert(b.vol>35&&v.settings.volumeLimit==35&&v.settings.volume==35);v.input(Key::Back);assert(b.vol==35&&v.settings.volumeLimit==35);v.navigate(Page::VolumeLimit);v.input(Key::VolumeDown);v.input(Key::Select);assert(v.settings.volumeLimit==32&&v.settings.volume==32&&b.vol==32);
     v.navigate(Page::Equalizer);v.navigate(Page::CustomEQ);v.input(Key::Select);assert(v.selection()==1);v.input(Key::Back);assert(v.page()==Page::CustomEQ&&v.selection()==0);for(int i=0;i<5;i++)v.input(Key::Select);assert(v.page()==Page::Equalizer);
     v.settings.theme=2;v.navigate(Page::Theme);assert(v.selection()==2);v.settings.repeat=1;v.navigate(Page::Repeat);assert(v.selection()==2);
 }
 static void buttonTests(const fs::path& root) {
     Fake b;Interface v(b,root/"Music");v.tick(100);v.skipBoot();
-    pressBodyButton(v,BodyButton::Up);assert(v.selection()==5);pressBodyButton(v,BodyButton::Down);assert(v.selection()==0);
-    pressBodyButton(v,BodyButton::Play);assert(v.page()==Page::Music);pressBodyButton(v,BodyButton::Back);assert(v.page()==Page::Home);
-    pressBodyButton(v,BodyButton::Lock);assert(v.locked);int before=b.vol;pressBodyButton(v,BodyButton::VolumeUp);pressBodyButton(v,BodyButton::Play);assert(b.vol==before&&v.page()==Page::Home);pressBodyButton(v,BodyButton::Lock);assert(!v.locked);
-    pressBodyButton(v,BodyButton::VolumeUp);assert(b.vol>before);pressBodyButton(v,BodyButton::VolumeDown);assert(b.vol<before+4);
-    b.state.playing=true;b.state.duration=180;v.navigate(Page::Playing);pressBodyButton(v,BodyButton::Play);assert(b.state.paused);pressBodyButton(v,BodyButton::Play);assert(!b.state.paused);
-    pressBodyButton(v,BodyButton::Down);v.tick(600);releaseBodyButton(v,BodyButton::Down);assert(b.seekPosition==4&&b.plays==0);pressBodyButton(v,BodyButton::Back);assert(v.page()==Page::Home);
+    auto tap=[&](BodyButton key){pressBodyButton(v,key);releaseBodyButton(v,key);};
+    tap(BodyButton::Up);assert(v.selection()==5);tap(BodyButton::Down);assert(v.selection()==0);
+    tap(BodyButton::Play);assert(v.page()==Page::Music);tap(BodyButton::Back);assert(v.page()==Page::Home);
+    tap(BodyButton::Lock);assert(v.locked);int before=b.vol;tap(BodyButton::VolumeUp);tap(BodyButton::Play);assert(b.vol==before&&v.page()==Page::Home);tap(BodyButton::Lock);assert(!v.locked);
+    tap(BodyButton::VolumeUp);assert(b.vol>before);tap(BodyButton::VolumeDown);assert(b.vol<before+4);
+    b.state.playing=true;b.state.duration=180;v.navigate(Page::Playing);tap(BodyButton::Play);assert(b.state.paused);tap(BodyButton::Play);assert(!b.state.paused);
+    pressBodyButton(v,BodyButton::Down);v.tick(850);releaseBodyButton(v,BodyButton::Down);assert(b.seekPosition==4&&b.plays==0);tap(BodyButton::Back);assert(v.page()==Page::Home);
 }
 static void lockTests(const fs::path& root) {
     for(int theme=0;theme<3;theme++) {
@@ -232,7 +233,7 @@ int main(int argc,char** argv) {
     ui.input(Key::Select);assert(backend.state.paused);ui.input(Key::Select);assert(!backend.state.paused);
     ui.input(Key::SeekForward);assert(backend.seekPosition==5);ui.input(Key::Next);assert(ui.queueIndex()==1);
     {int plays=backend.plays;ui.pressTransport(1);ui.tick(clock+=100);assert(backend.plays==plays);ui.releaseTransport();assert(backend.plays==plays+1);plays=backend.plays;
-     ui.pressTransport(1);ui.tick(clock+=500);assert(backend.seekPosition==4);ui.render();requireAsset(ui,2*256+3,5,35);ui.tick(clock+=250);assert(backend.seekPosition==8);ui.releaseTransport();assert(backend.plays==plays);
+     ui.pressTransport(1);ui.tick(clock+=750);assert(backend.seekPosition==4);ui.render();requireAsset(ui,2*256+3,5,35);ui.tick(clock+=300);assert(backend.seekPosition==8);ui.releaseTransport();assert(backend.plays==plays);
      backend.state.position=179;ui.input(Key::SeekForward);assert(backend.seekPosition==179.95);backend.state.position=1;ui.input(Key::SeekBack);assert(backend.seekPosition==0);
      ui.click(64,48);assert(backend.seekPosition>89&&backend.seekPosition<91);ui.click(127,48);assert(backend.seekPosition==179.95);
      ui.render();requireAsset(ui,2*256+5,5,35);requireAsset(ui,1*256+4,107,51);
@@ -256,7 +257,7 @@ int main(int argc,char** argv) {
     ui.navigate(Page::Recordings);ui.input(Key::Select);ui.input(Key::Back);ui.input(Key::Back);assert(backend.discards==1&&!backend.mic.active);
     ui.input(Key::Home);ui.input(Key::Lock);ui.input(Key::Select);assert(ui.page()==Page::Home);ui.input(Key::Lock);ui.input(Key::Select);assert(ui.page()==Page::Music);
     {Fake b;Interface locked(b,root/"Music");locked.tick(100);locked.skipBoot();locked.navigate(Page::Playing);locked.input(Key::Lock);locked.click(60,48);assert(b.seekPosition==-1);}
-    {Fake b;b.state.playing=true;b.state.duration=1000;Interface held(b,root/"Music");held.tick(100);held.skipBoot();held.navigate(Page::Playing);held.pressTransport(1);for(int i=0;i<11;i++)held.tick(600+i*250);assert(b.seekPosition==46);held.releaseTransport();assert(b.plays==0);held.pressTransport(1);held.cancelTransport();held.releaseTransport();assert(b.plays==0);}
+    {Fake b;b.state.playing=true;b.state.duration=1000;Interface held(b,root/"Music");held.tick(100);held.skipBoot();held.navigate(Page::Playing);held.pressTransport(1);for(int i=0;i<11;i++)held.tick(850+i*300);assert(b.seekPosition==46);held.releaseTransport();assert(b.plays==0);held.pressTransport(1);held.cancelTransport();held.releaseTransport();assert(b.plays==0);}
     Equalizer eq;for(int s=-32000;s<=32000;s+=1000)assert(eq.process(int16_t(s),0,100)==s);eq.configure({12,-12,12,-12,12});for(int i=0;i<48000;i++){auto sample=int16_t(32000*std::sin(i*.057));eq.process(sample,0,100);eq.process(sample,1,100);}eq.reset();assert(eq.process(0,0,100)==0&&eq.process(0,1,100)==0);
     // A large library must share queue storage rather than copying it per row.
     std::vector<Song> large;for(int i=0;i<5000;i++)large.push_back({root/"Music"/(std::to_string(i)+".mp3"),{}});

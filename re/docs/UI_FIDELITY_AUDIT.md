@@ -63,9 +63,11 @@ Options menu and invented Yes/No confirmations. These have now been addressed:
 
 1. **Timer and key cadence.** Firmware timer arguments do not by themselves
    prove milliseconds. Title/metadata 100 ms steps, spinner 90 ms, volume popup
-   1400 ms, lock feedback 1250 ms, seek hold 450 ms/repeat 250 ms and shutdown
+   1400 ms, lock feedback 1250 ms, seek hold 750 ms/repeat 300 ms and shutdown
    4.5 seconds are desktop choices. Hardware routing and all long-press cases
-   remain incomplete.
+   remain incomplete. The shared key generator, repeat counts and principal
+   short/long/release behavior are now recovered; KEY_BEHAVIOR.md records those
+   source facts and the desktop tick interpretation.
 2. **Regional dialogs and notices.** English prompt geometry and source
    language-dependent playlist/footer positions are ported. Thai shaping,
    language-specific multiline layout, long-caption scrolling and all success/
@@ -81,7 +83,7 @@ Options menu and invented Yes/No confirmations. These have now been addressed:
 
 | Area | Evidence / present behavior | Remaining work or intentional adaptation |
 | --- | --- | --- |
-| Physical controls | `ref/tpv_3433752.avif` shows four face keys around a blank center | Back left, Play/Pause right, Up/Down navigation/transport and separate Vol-/Vol+ now match that arrangement. Top lock-only slider is the owner's requested adaptation; shell dimensions remain hand drawn |
+| Physical controls | `ref/tpv_3433752.avif` shows four face keys around a blank center; owner describes the original slider | Back left, Play/Pause right, Up/Down navigation/transport and separate Vol-/Vol+ match that arrangement. Slider left latches Lock, center unlocks, held right powers off and springs back; dimensions remain hand drawn |
 | Folder browser | Desktop begins inside Music and queues directory songs | Recover original root/drive access, sorting, filtering and file-type rules |
 | Playlists/bookmarks | M3U8 and bookmarks.tsv beside EXE | Desktop formats; original formats, limits and ordering are unknown |
 | Recording | Windows waveIn, timestamped mono 22050-Hz WAV; estimated remaining time capped at four hours | Recover original codec/naming/free-space and complete pause/confirmation state machine |

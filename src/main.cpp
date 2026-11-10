@@ -25,6 +25,7 @@ namespace fs=std::filesystem;
 using namespace Gdiplus;
 using player::Key;
 using player::Page;
+using player::SliderPosition;
 constexpr int W=920,H=380;
 constexpr UINT ScanDone=WM_APP+1;
 HWND window;
@@ -40,6 +41,10 @@ std::array<uint32_t,128*64> screen;
 ULONGLONG started=0,pressedAt=0;
 int pressed=-1;
 bool closing=false;
+std::array<bool,256> keyboardHeld{};
+std::array<Key,256> keyboardAction{};
+bool sliderDragging=false,powerKeyDown=false,releasingCapture=false;
+player::SliderMotion sliderMotion;
 std::wstring screenshotPath,smokeReport;
 int smokeStep=-1;
 std::vector<std::string> smokeChecks;
@@ -85,8 +90,31 @@ void beginScan() {
         if(!scanStop)PostMessageW(window,ScanDone,0,0);
     });
 }
-void control(int button) {
-    if(button>=0)player::pressBodyButton(*ui,player::BodyButton(button));
+Key bodyKey(int button) {
+    return player::bodyButtonKeys[size_t(button)];
+}
+bool keyHeld(Key key) {
+    for(size_t i=0;i<keyboardHeld.size();i++)if(keyboardHeld[i]&&keyboardAction[i]==key)return true;
+    return pressed>=0&&pressed!=2&&bodyKey(pressed)==key;
+}
+void pressKeyboard(WPARAM code,Key key) {
+    if(code>=keyboardHeld.size()||keyboardHeld[code])return;
+    bool alreadyHeld=keyHeld(key);keyboardHeld[code]=true;keyboardAction[code]=key;
+    if(!alreadyHeld)ui->pressKey(key);
+}
+void releaseKeyboard(WPARAM code) {
+    if(code>=keyboardHeld.size()||!keyboardHeld[code])return;
+    Key key=keyboardAction[code];keyboardHeld[code]=false;
+    if(!keyHeld(key))ui->releaseKey(key);
+}
+void releaseMouseCapture(HWND hwnd) {
+    if(GetCapture()==hwnd){releasingCapture=true;ReleaseCapture();releasingCapture=false;}
+}
+void cancelHeldControls(HWND hwnd,bool releaseCapture) {
+    keyboardHeld.fill(false);powerKeyDown=false;sliderDragging=false;pressed=-1;
+    ui->cancelKeys();ui->releaseSlider();
+    sliderMotion.release();
+    if(releaseCapture)releaseMouseCapture(hwnd);
 }
 void renderScreen(){ui->render();screen=ui->screen;}
 std::wstring trackTitle(const TrackInfo&){return ui->currentTitle();}
@@ -100,14 +128,83 @@ void label(Graphics& g,float x,float y,float w,float h,const wchar_t* value,floa
     g.DrawString(value,-1,&font,RectF(x,y,w,h),&format,&brush);
 }
 struct Button { int x,y,w,h; const wchar_t* hint; };
+constexpr int bodyLeft=25,bodyWidth=866;
+constexpr int powerLeft=666,powerWidth=78,powerPlateLeft=24,powerPlateRight=28;
+constexpr int volumeWidth=2*powerWidth,volumeRim=3;
+constexpr int controlEdgeGap=bodyLeft+bodyWidth-(powerLeft+powerWidth+powerPlateRight);
+constexpr int volumeLeft=bodyLeft+controlEdgeGap+volumeRim,volumeEndWidth=volumeWidth/3;
 const Button buttons[]={
-    {710,79,64,44,L"Up / previous / hold to seek"},{654,139,50,68,L"Back"},{75,29,78,21,L"Lock / unlock"},
+    {710,79,64,44,L"Up / previous / hold to seek"},{654,139,50,68,L"Back"},{powerLeft,29,powerWidth,21,L"Lock / unlock / hold power"},
     {780,139,50,68,L"Play / pause / select"},{710,222,64,44,L"Down / next / hold to seek"},
-    {647,29,55,21,L"Volume down"},{707,29,55,21,L"Volume up"}
+    {volumeLeft,29,volumeEndWidth,21,L"Volume down"},{volumeLeft+volumeWidth-volumeEndWidth,29,volumeEndWidth,21,L"Volume up"}
 };
 static_assert(std::size(buttons)==player::bodyButtonCount);
 int buttonAt(float x,float y) { for(size_t i=0;i<std::size(buttons);i++){auto b=buttons[i];if(x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h)return int(i);}return -1; }
+PointF playerPoint(HWND hwnd,LPARAM point) {
+    RECT r;GetClientRect(hwnd,&r);float scale=std::max(.001f,std::min(float(r.right)/W,float(r.bottom)/H));
+    return PointF((GET_X_LPARAM(point)-(r.right-W*scale)/2)/scale,(GET_Y_LPARAM(point)-(r.bottom-H*scale)/2)/scale);
+}
+float sliderPointer(float x) {
+    auto b=buttons[2];float handleWidth=(b.w-4)*2/3.0f,travel=b.w-4-handleWidth;
+    return (x-b.x-2-handleWidth/2)/travel;
+}
+bool sliderHandleAt(float x) {
+    auto b=buttons[2];float handleWidth=(b.w-4)*2/3.0f,travel=b.w-4-handleWidth;
+    float left=b.x+2+sliderMotion.position()*travel;
+    return x>=left&&x<left+handleWidth;
+}
+void drawSlider(Graphics& g) {
+    // The owner's original three-position slider supersedes the earlier lock-only control.
+    auto b=buttons[2];float x=float(b.x),y=float(b.y),w=float(b.w),h=float(b.h),cy=y+h/2;
+    auto plate=rounded(x-powerPlateLeft,y-4,w+powerPlateLeft+powerPlateRight,h+8,8);
+    LinearGradientBrush mounting(PointF(x,y-4),PointF(x,y+h+4),Color(255,48,55,65),Color(255,15,20,27));
+    g.FillPath(&mounting,plate.get());Pen plateEdge(Color(255,111,121,135),1);g.DrawPath(&plateEdge,plate.get());
+    auto groove=rounded(x,y,w,h,h/2);
+    LinearGradientBrush recess(PointF(x,y),PointF(x,y+h),Color(255,5,7,10),Color(255,49,55,63));
+    g.FillPath(&recess,groove.get());Pen edge(Color(255,25,29,35),1.2f);g.DrawPath(&edge,groove.get());
+    auto inner=rounded(x+1.5f,y+1.5f,w-3,h-3,(h-3)/2);SolidBrush dark(Color(255,13,16,20));g.FillPath(&dark,inner.get());
+    float handleWidth=(w-4)*2/3,travel=w-4-handleWidth;
+    auto position=ui->sliderPosition();float fraction=sliderMotion.position();
+    float handleX=x+2+fraction*travel;
+    auto shadow=rounded(handleX,y+3,handleWidth,h-4,(h-4)/2);SolidBrush shade(Color(170,0,0,0));g.FillPath(&shade,shadow.get());
+    auto handle=rounded(handleX,y+1.5f,handleWidth,h-4,(h-4)/2);
+    LinearGradientBrush grip(PointF(handleX,y+1.5f),PointF(handleX,y+h-2.5f),Color(255,119,127,138),Color(255,44,51,61));
+    g.FillPath(&grip,handle.get());Pen rim(position==SliderPosition::Power?Color(255,113,230,250):Color(255,163,173,187),.9f);g.DrawPath(&rim,handle.get());
+    Pen ribs(Color(255,26,32,41),1);float middle=handleX+handleWidth/2;
+    for(int i=-1;i<=1;i++)g.DrawLine(&ribs,middle+i*4,cy-3,middle+i*4,cy+3);
+    Color ink(255,195,207,220);Pen icon(ink,1.7f);SolidBrush iconBrush(ink);
+    float lockX=x-17;g.DrawArc(&icon,RectF(lockX+1,cy-8,9,9),180,180);
+    auto lockBody=rounded(lockX,cy-3.5f,11,8,2);g.FillPath(&iconBrush,lockBody.get());
+    Pen keyhole(Color(255,30,36,44),1.4f);g.DrawLine(&keyhole,lockX+5.5f,cy-1.5f,lockX+5.5f,cy+2);
+    float powerX=x+w+10;g.DrawArc(&icon,RectF(powerX,cy-6,12,12),-50,280);g.DrawLine(&icon,powerX+6,cy-8,powerX+6,cy);
+}
+void drawVolumeRocker(Graphics& g) {
+    auto left=buttons[5],right=buttons[6];
+    float x=float(left.x),y=float(left.y),w=float(right.x+right.w-left.x),h=float(left.h),cx=x+w/2,cy=y+h/2;
+    auto socket=rounded(x-volumeRim,y-volumeRim,w+2*volumeRim,h+2*volumeRim,(h+2*volumeRim)/2);
+    LinearGradientBrush recess(PointF(x,y-volumeRim),PointF(x,y+h+volumeRim),Color(255,9,12,17),Color(255,53,61,71));
+    g.FillPath(&recess,socket.get());Pen socketRim(Color(255,107,117,130),1);g.DrawPath(&socketRim,socket.get());
+
+    bool minus=keyHeld(Key::VolumeDown),plus=keyHeld(Key::VolumeUp);
+    float tilt=minus&&!plus?-2.0f:plus&&!minus?2.0f:0;
+    // One cap pivots about its center; there is no seam between the two ends.
+    auto saved=g.Save();g.TranslateTransform(cx,cy);g.RotateTransform(tilt);g.TranslateTransform(-cx,-cy);
+    auto shadow=rounded(x,y+2,w,h,h/2);SolidBrush shade(Color(160,0,0,0));g.FillPath(&shade,shadow.get());
+    auto cap=rounded(x,y,w,h,h/2);
+    LinearGradientBrush face(PointF(x,y),PointF(x,y+h),Color(255,105,114,127),Color(255,30,36,45));
+    g.FillPath(&face,cap.get());Pen rim(Color(255,151,163,179),1);g.DrawPath(&rim,cap.get());
+    Pen shine(Color(150,199,210,224),.8f);g.DrawLine(&shine,x+12,y+2,x+w-12,y+2);
+    Color ink(255,205,216,229);Pen symbol(ink,1.8f);
+    float minusX=left.x+left.w/2.0f,plusX=right.x+right.w/2.0f;
+    g.DrawLine(&symbol,minusX-5,cy,minusX+5,cy);
+    g.DrawLine(&symbol,plusX-5,cy,plusX+5,cy);g.DrawLine(&symbol,plusX,cy-5,plusX,cy+5);
+    label(g,cx-19,y+2,38,h-4,L"VOL",9,ink,true);
+    g.Restore(saved);
+}
 void drawButton(Graphics& g,int index) {
+    if(index==2){drawSlider(g);return;}
+    if(index==5){drawVolumeRocker(g);return;}
+    if(index==6)return;
     auto b=buttons[index];auto path=rounded(float(b.x),float(b.y),float(b.w),float(b.h),8);
     LinearGradientBrush fill(Point(b.x,b.y),Point(b.x,b.y+b.h),pressed==index?Color(255,62,68,75):Color(255,31,34,39),Color(255,8,9,12));
     g.FillPath(&fill,path.get());Pen outline(Color(255,67,70,76),1);g.DrawPath(&outline,path.get());
@@ -118,15 +215,13 @@ void drawButton(Graphics& g,int index) {
         int d=index==0?-1:1;PointF points[]={{cx,cy+d*7},{cx-7,cy-d*5},{cx+7,cy-d*5}};g.FillPolygon(&brush,points,3);
     }
     if(index==3) { PointF p[]={{cx-9,cy-8},{cx+3,cy},{cx-9,cy+8}};g.FillPolygon(&brush,p,3);g.FillRectangle(&brush,cx+6,cy-7,2.0f,14.0f);g.FillRectangle(&brush,cx+11,cy-7,2.0f,14.0f); }
-    if(index==2) {g.DrawLine(&pen,float(b.x+10),cy,float(b.x+b.w-10),cy);g.FillEllipse(&brush,float(ui->locked?b.x+b.w-21:b.x+9),cy-6,12.0f,12.0f);}
-    if(index==5||index==6) {g.DrawLine(&pen,cx-6,cy,cx+6,cy);if(index==6)g.DrawLine(&pen,cx,cy-6,cx,cy+6);}
 }
 void paint(HDC dc,int width,int height) {
     Graphics g(dc);g.SetSmoothingMode(SmoothingModeAntiAlias);g.Clear(Color(255,24,27,33));
     float scale=std::min(float(width)/W,float(height)/H);
     g.TranslateTransform((width-W*scale)/2,(height-H*scale)/2);g.ScaleTransform(scale,scale);
     auto shadow=rounded(34,43,858,296,64);SolidBrush shade(Color(255,10,12,17));g.FillPath(&shade,shadow.get());
-    auto shell=rounded(25,36,866,292,62);
+    auto shell=rounded(bodyLeft,36,bodyWidth,292,62);
     LinearGradientBrush metal(Point(0,36),Point(0,328),Color(255,220,224,229),Color(255,87,93,104));
     REAL positions[]={0,0.1f,0.4f,0.8f,1};Color colors[]={Color(255,164,171,181),Color(255,248,250,252),Color(255,141,147,157),Color(255,99,106,116),Color(255,221,225,232)};
     metal.SetInterpolationColors(colors,positions,5);g.FillPath(&metal,shell.get());
@@ -150,7 +245,7 @@ void paint(HDC dc,int width,int height) {
     if(!info.error.empty())status=info.error;
     else if(info.playing)status+=L"  ·  "+trackTitle(info);
     label(g,40,337,840,19,status.c_str(),12,Color(255,170,183,197));
-    label(g,40,357,840,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume",11,Color(255,111,126,143));
+    label(g,40,357,840,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume   ·   P: hold power",11,Color(255,111,126,143));
 }
 void saveScreenshot(const std::wstring& path) {
     Bitmap bitmap(W,H,PixelFormat32bppARGB);Graphics graphics(&bitmap);
@@ -234,6 +329,8 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         auto time=GetTickCount64();
         if(rescanRequested.exchange(false)&&!closing)beginScan();
         ui->tick(time);
+        sliderMotion.tick(time,ui->sliderPosition());
+        if(!closing&&ui->takePowerOffRequest())SendMessageW(hwnd,WM_CLOSE,0,0);
         if(closing&&ui->shutdownFinished()){DestroyWindow(hwnd);return 0;}
         if(smokeStep>=0&&smokeStep<101)smokeTick();
         else if(smokeStep<0&&!screenshotPath.empty()&&time-started>8200&&!closing){saveScreenshot(screenshotPath);PostMessageW(hwnd,WM_CLOSE,0,0);}
@@ -241,40 +338,60 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     }
     case WM_KEYDOWN:
         if(closing)return 0;
+        if(lp&(1LL<<30))return 0;
         if(ui->page()==Page::Confirm&&(wp=='S'||wp=='R'||wp==VK_F5||wp==VK_F9||wp==VK_F10))return 0;
-        if((lp&(1LL<<30))&&(wp==VK_RIGHT||wp==VK_RETURN||wp==VK_SPACE||wp=='L'))return 0;
-        if(wp==VK_ESCAPE||wp==VK_BACK)ui->input(Key::Back);
+        if(wp==VK_ESCAPE||wp==VK_BACK)pressKeyboard(wp,Key::Back);
         else if(wp==VK_HOME)ui->input(Key::Home);
-        else if(wp==VK_RETURN||wp==VK_SPACE)ui->input(Key::Select);
-        else if(wp==VK_UP||wp==VK_DOWN){if(GetKeyState(VK_SHIFT)&0x8000)ui->input(wp==VK_UP?Key::SeekBack:Key::SeekForward);else control(wp==VK_UP?0:4);}
-        else if(wp==VK_LEFT)ui->input(Key::Back);
-        else if(wp==VK_RIGHT)ui->input(Key::Select);
-        else if(wp==VK_ADD||wp==VK_OEM_PLUS)ui->input(Key::VolumeUp);
-        else if(wp==VK_SUBTRACT||wp==VK_OEM_MINUS)ui->input(Key::VolumeDown);
+        else if(wp==VK_RETURN||wp==VK_SPACE)pressKeyboard(wp,Key::Select);
+        else if(wp==VK_UP||wp==VK_DOWN)pressKeyboard(wp,(GetKeyState(VK_SHIFT)&0x8000)?(wp==VK_UP?Key::SeekBack:Key::SeekForward):(wp==VK_UP?Key::Up:Key::Down));
+        else if(wp==VK_LEFT)pressKeyboard(wp,Key::Back);
+        else if(wp==VK_RIGHT)pressKeyboard(wp,Key::Select);
+        else if(wp==VK_ADD||wp==VK_OEM_PLUS)pressKeyboard(wp,Key::VolumeUp);
+        else if(wp==VK_SUBTRACT||wp==VK_OEM_MINUS)pressKeyboard(wp,Key::VolumeDown);
         else if(wp=='M'||wp==VK_APPS)ui->input(Key::Menu);
         else if(wp=='L')ui->input(Key::Lock);
+        else if(wp=='P'){powerKeyDown=true;ui->moveSlider(SliderPosition::Power);}
         else if(wp=='S'&&!ui->locked&&!ui->booting()&&!ui->updating())ui->settings.shuffle=ui->settings.shuffle?0:1;
         else if(wp=='R'&&!ui->locked&&!ui->booting()&&!ui->updating())ui->settings.repeat=(ui->settings.repeat+1)%3;
         else if(wp==VK_F5){ui->loadStations(layoutDir/L"Playlists"/L"radio.json");beginScan();}
         else if((wp==VK_F9||wp==VK_F10)&&!ui->locked&&!ui->booting()&&!ui->updating()){ui->input(Key::Home);ui->navigate(wp==VK_F9?Page::USBConnected:Page::USB);}
         return 0;
-    case WM_KEYUP:if(wp==VK_UP||wp==VK_DOWN)ui->releaseTransport();return 0;
-    case WM_KILLFOCUS:ui->cancelTransport();return 0;
+    case WM_KEYUP:
+        if(wp=='P'){powerKeyDown=false;if(!sliderDragging||ui->sliderPosition()!=SliderPosition::Power)ui->releaseSlider();}
+        else releaseKeyboard(wp);
+        return 0;
+    case WM_KILLFOCUS:cancelHeldControls(hwnd,true);return 0;
     case WM_MOUSEWHEEL:{bool playback=ui->page()==Page::Playing||ui->page()==Page::Radio;ui->input(GET_WHEEL_DELTA_WPARAM(wp)>0?(playback?Key::VolumeUp:Key::Up):(playback?Key::VolumeDown:Key::Down));return 0;}
     case WM_LBUTTONDOWN: {
         if(closing)return 0;
-        RECT r;GetClientRect(hwnd,&r);float scale=std::min(float(r.right)/W,float(r.bottom)/H);
-        float x=(GET_X_LPARAM(lp)-(r.right-W*scale)/2)/scale,y=(GET_Y_LPARAM(lp)-(r.bottom-H*scale)/2)/scale;
-        pressed=buttonAt(x,y);pressedAt=GetTickCount64();SetCapture(hwnd);
-        if(pressed>=0)control(pressed);
+        auto point=playerPoint(hwnd,lp);float x=point.X,y=point.Y;
+        int button=buttonAt(x,y);bool alreadyHeld=button>=0&&button!=2&&keyHeld(bodyKey(button));
+        pressed=button;pressedAt=GetTickCount64();SetCapture(hwnd);
+        if(pressed==2){sliderDragging=true;ui->moveSlider(sliderMotion.press(sliderPointer(x),sliderHandleAt(x)));}
+        else if(pressed>=0){if(!alreadyHeld)ui->pressKey(bodyKey(pressed));}
         else if(pressed<0&&x>=210&&x<594&&y>=83&&y<275)ui->click(int((x-210)/3),int((y-83)/3));
         return 0;
     }
-    case WM_LBUTTONUP:if(pressed>=0)player::releaseBodyButton(*ui,player::BodyButton(pressed));pressed=-1;ReleaseCapture();return 0;
-    case WM_CAPTURECHANGED:ui->cancelTransport();pressed=-1;return 0;
+    case WM_MOUSEMOVE:
+        if(sliderDragging&&!closing) {
+            if(!(wp&MK_LBUTTON)){cancelHeldControls(hwnd,true);return 0;}
+            auto point=playerPoint(hwnd,lp);
+            auto groove=buttons[2];
+            if(point.Y>=groove.y-8&&point.Y<groove.y+groove.h+8)ui->moveSlider(sliderMotion.drag(sliderPointer(point.X)));
+            else {ui->releaseSlider();sliderMotion.release();sliderDragging=false;}
+            InvalidateRect(hwnd,nullptr,FALSE);
+        }
+        return 0;
+    case WM_LBUTTONUP: {
+        int button=pressed;bool wasSlider=sliderDragging;pressed=-1;sliderDragging=false;
+        if(wasSlider){sliderMotion.release();if(!powerKeyDown)ui->releaseSlider();}
+        else if(button>=0&&button!=2){Key key=bodyKey(button);if(!keyHeld(key))ui->releaseKey(key);}
+        releaseMouseCapture(hwnd);return 0;
+    }
+    case WM_CAPTURECHANGED:if(!releasingCapture)cancelHeldControls(hwnd,false);return 0;
     case WM_ERASEBKGND:return 1;
     case WM_PAINT:{PAINTSTRUCT p;HDC dc=BeginPaint(hwnd,&p);RECT r;GetClientRect(hwnd,&r);HDC mem=CreateCompatibleDC(dc);HBITMAP bitmap=CreateCompatibleBitmap(dc,std::max(1L,r.right),std::max(1L,r.bottom));auto old=SelectObject(mem,bitmap);paint(mem,r.right,r.bottom);BitBlt(dc,0,0,r.right,r.bottom,mem,0,0,SRCCOPY);SelectObject(mem,old);DeleteObject(bitmap);DeleteDC(mem);EndPaint(hwnd,&p);return 0;}
-    case WM_CLOSE:if(!closing){if(smokeStep<0)saveSettings();recorder.finish(true);audio->stop();ui->shutdown();closing=true;}return 0;
+    case WM_CLOSE:if(!closing){cancelHeldControls(hwnd,true);if(smokeStep<0)saveSettings();recorder.finish(true);audio->stop();ui->shutdown();closing=true;}return 0;
     case WM_DESTROY:KillTimer(hwnd,1);PostQuitMessage(0);return 0;
     }
     return DefWindowProcW(hwnd,msg,wp,lp);

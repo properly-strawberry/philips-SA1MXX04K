@@ -215,9 +215,18 @@ counts 1,10,20,40. Event handler 0x1532e6 distinguishes tap, hold/repeat and
 release events (0x601/604/610, 0x701/704/710, 0x608/708, 0x804/808/810).
 Original physical repeat timing and parameter-to-time conversion are not yet
 fully traced. Desktop adaptation: release a short Up/Down or upper/lower shell press to
-change track; after 450 ms, seek every 250 ms using those step sizes in seconds.
+change track; after the subsequent key-generator pass, seek starts after 750 ms
+and repeats every 300 ms using those step sizes in seconds. These milliseconds
+are the desktop's 10-ms-per-kernel-tick interpretation, not a measured clock.
 Shift+Up/Down remains a five-second seek, and clicking the progress bar maps
 to the track duration. Seeking clamps to the file and works while paused.
+
+`KEY_BEHAVIOR.md` records the later shared key-generator trace, including short
+click on release, long-start/repeat/held-release families, volume/menu/EQ repeat,
+long Back to Home, safe modal boundaries, and key-3 hold-to-shutdown versus
+key-8 lock configuration. `key-input-dossiers.json` and `key-input-data.json`
+preserve the code, assembly, bytes and Evidence IDs. The physical tick duration
+is still unknown; the desktop now matches the owner's three-position slider.
 
 Recording constructor 0x156e66 uses a filename at (5,13), 118x14; elapsed time
 at (18,37), remaining time at (73,37), progress at (5,48), red record/pause icon

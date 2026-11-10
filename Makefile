@@ -5,7 +5,7 @@ CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Wpedantic -finput-charset=UTF-8
 LDLIBS := -L$(FFMPEG)/lib -lavformat -lavcodec -lswresample -lavutil -lwinmm -lgdiplus -lshlwapi -lshell32 -lole32 -luuid
 LDFLAGS := -municode -mwindows -static -static-libgcc -static-libstdc++
 
-.PHONY: all assets package clean test-ui test-audio map-vmi
+.PHONY: all assets package clean test-ui test-audio test-keys map-vmi
 all: dist/philips.exe
 
 gen/player/assets.h: tools/embed_assets.py tools/extract_host_ui.py gen/sb/03_hvmi.bin gen/sb/05_rsrc.bin gen/resources/inventory.tsv gen/resources/texts.tsv
@@ -43,6 +43,13 @@ gen/audio-tests/audio_buffer_test: tests/audio_buffer_test.cpp src/audio_buffer.
 
 test-audio: gen/audio-tests/audio_buffer_test
 	gen/audio-tests/audio_buffer_test
+
+gen/key-tests/key_test: tests/key_test.cpp src/interface.cpp src/radio_config.cpp $(HEADERS) gen/player/assets.h
+	mkdir -p gen/key-tests
+	g++ -std=c++17 -O1 -Wall -Wextra -Wpedantic -Isrc -Igen/player tests/key_test.cpp src/interface.cpp src/radio_config.cpp -o $@
+
+test-keys: gen/key-tests/key_test
+	gen/key-tests/key_test gen/key-tests/fixture
 
 package: dist/philips.exe
 	python3 -I tools/package.py

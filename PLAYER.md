@@ -56,20 +56,43 @@ services remain adaptations.
   The left face button is Back; the right face button is Play/Pause/Select.
 - Shift + Up / Down: seek five seconds; click the progress bar to seek.
 - Backspace or Escape: Back. Home: main menu.
+- Hold Back to return to the main menu from ordinary menus. In a recording or
+  confirmation it performs that screen's Back action once; the same hold cannot
+  continue into the next screen or discard a newly opened recording prompt.
 - Plus / Minus: volume. Mouse wheel: selection or playback volume.
 - S: shuffle. R: repeat off / all / one. F5: rescan Music.
 - M: current-track shortcuts while on the playback screen, or radio options.
   The track shortcut menu is a desktop addition: Play Mode, Sound Settings,
   Add To Playlist or Remove From Playlist as appropriate, and Delete.
-- L or the separate top-edge slider: lock/unlock. It has no power-off action.
+- Right-side top slider: left latches Lock; center is Unlocked; hold right for power-off.
+  The right position springs back to center on release. L toggles Lock/Unlocked;
+  holding P is the keyboard equivalent of holding the slider right. Releasing
+  early, losing focus/capture or moving away cancels an unfinished power hold.
   Lock/unlock briefly replaces the whole screen with the original closed/open
   padlock, then restores the current page. Locked buttons show the padlock again.
   Feedback lasts 1.25 seconds, a desktop interpretation of firmware timer ticks.
-- Separate Vol- / Vol+ shell keys remain available; keyboard Plus / Minus too.
+- The left-side volume rocker is one solid piece marked "- VOL +", pivoting
+  at its center. Click or hold its left/right end for Vol-/Vol+; the labeled
+  center is neutral. Its cap is twice the power groove's width, with the same
+  outer edge margin as the complete right-side switch block. Keyboard Plus /
+  Minus also works.
+- Volume and menu navigation repeat while held, with the same controller for
+  mouse buttons and keyboard. Short actions complete on release; a recognized
+  long action does not fire another short action on release. Custom EQ repeats
+  gain changes; Volume Limit uses Vol-/Vol+, while Up/Down is ignored.
+- The slider's icons share a dark backing plate. Its handle follows a rightward
+  drag smoothly, arming power near the right stop, and eases back to center on
+  release. The left Lock detent snaps into place and stays latched.
 - F9: original Connected-to-PC screen. Up/Down cycles FullyCharged, Charging
   and Do not disconnect. F10: localized Charge & transfer / Charge & play preview.
 - Settings includes play modes, sound/EQ, volume limit, theme, display timers,
   screen rotation, language, information and a settings-only factory reset.
+
+Desktop hold timing uses a 10-ms interpretation of recovered firmware ticks:
+750 ms to recognize a long press, then 100-ms volume or 300-ms navigation/seek
+repeats; power-off requests at about 950 ms. The physical tick duration remains
+unverified. Closing through the slider keeps the recording and settings, then
+plays the existing shutdown animation. See `re/docs/KEY_BEHAVIOR.md` for evidence.
 
 All songs scans Music recursively. Artists and Albums use FFmpeg metadata.
 Returning to the main menu with the large icons starts a fresh background scan
@@ -211,6 +234,11 @@ sample order across codec packet sizes and ring wraps, bounded storage, a
 deliberately stalled decoder, seek cancellation, EOF seeks, stop while blocked,
 and short-file/error tails. These tests use synthetic PCM and do not exercise
 FFmpeg or a Windows audio driver. See `docs/AUDIO_BUFFERING.md` for the audit.
+
+`make test-keys` checks physical press/release timing, repeated navigation/volume,
+seek acceleration, modal boundaries, wake/lock suppression and the three-position
+slider. It verifies that a power request preserves an active/paused recording
+until the Windows shell handles the normal close/save path.
 
 `make test-ui` runs the actual portable interface implementation natively on
 Linux with fake audio/microphone services. It covers navigation, all 24 language

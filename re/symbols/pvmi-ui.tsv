@@ -64,3 +64,17 @@
 0x14dae0	ui_populate_error_dialog	Observed error/empty-library text selection and message-row layout	F
 0x14e86c	widget_text_properties	Observed text property 0x109 vertical centering and text offsets	F
 0x14e62c	widget_text_paint	Observed text paint using computed horizontal/vertical offsets	F
+0x16c0b8	key_timer_initialize	Observed btn_timer 5/5 creation and key state initialization	F
+0x173e8	key_timer_countdown	Observed per-key countdown and expiry queue messages	F
+0x14a722	key_manager_thread	Observed configuration/raw/timer message routing	F
+0x16c074	key_manager_configure	Observed packed mask/cadence and shared flag updates	F
+0x14a842	key_state_dispatch	Observed six key states and shared timer activation	F
+0x14a7c4	key_raw_changes	Observed raw changed-bit to key-state routing	F
+0x14a8c8	key_state_update	Observed countdown/emit/state updates and first-delay multiplier	F
+0x14a676	key_emit_event	Observed key prefix, event mask, lock bit and repeat routing	F
+0x14a90c	key_state_idle	Observed raw-down initial countdown	F
+0x14a92c	key_state_pressed	Observed short-click release or long-start and first repeat	F
+0x14a9a0	key_state_double_wait	Observed optional delayed click and second-press routing	F
+0x14a9d6	key_state_second_press	Observed optional second-press click/long routing	F
+0x14aa2c	key_state_second_release	Observed optional second-release event routing	F
+0x14aa6c	key_state_repeat	Observed hold repeat and release event emission	F

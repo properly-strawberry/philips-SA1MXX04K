@@ -131,7 +131,9 @@ Lock feedback clears the full screen and uses group 3.15..17 (closed) or
 3.18..20 (open) at (52,11). It times out to the previous page, retaining the
 control lock; a blocked keypress shows it again. Its 1250-ms desktop duration
 is not a proven firmware wall-clock duration. The photo establishes the four
-face-button arrangement; the requested separate top slider only locks/unlocks.
+face-button arrangement. The owner's later clarification restores the original
+three-position slider: latched-left Lock, centered Unlocked, spring-return held
+right Power. See KEY_BEHAVIOR.md for the subsequent key-generator investigation.
 The full list of remaining approximations is in UI_FIDELITY_AUDIT.md.
 
 ## Title and modal-flow follow-up

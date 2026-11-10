@@ -41,6 +41,7 @@ enum class Page { Home,Music,Artists,Albums,Group,Songs,Folders,Playing,Options,
     USB,USBConnected,PlaylistRemove };
 enum class Key { Previous,Next,Up,Down,Select,Back,Home,Menu,VolumeUp,VolumeDown,
     SeekBack,SeekForward,Lock };
+enum class SliderPosition { Lock,Unlock,Power };
 struct Frame { Page page; int selected=0,scroll=0; std::wstring group; int groupMode=0; fs::path directory; };
 
 // The same interface/state machine is compiled into Windows and native tests.
@@ -59,12 +60,23 @@ public:
     std::array<uint32_t,128*64> screen{};
     void setLibrary(std::vector<Song> songs);
     void input(Key key);
+    // Physical gestures; input() remains the one-shot desktop/diagnostic path.
+    void pressKey(Key key);
+    void releaseKey(Key key);
+    void cancelKeys();
+    void moveSlider(SliderPosition position);
+    void releaseSlider();
+    SliderPosition sliderPosition() const {return powerHeld_?SliderPosition::Power:locked?SliderPosition::Lock:SliderPosition::Unlock;}
+    bool takePowerOffRequest();
+    // Recovered tick counts interpreted at 10 ms/tick for the desktop.
+    // The physical device's wall-clock tick period is not established.
+    static constexpr uint64_t KeyHoldDelay=750,VolumeRepeatDelay=100,NavigationRepeatDelay=300,PowerHoldDelay=950;
     void tick(uint64_t millis);
     void render();
     void click(int x,int y);
     void pressTransport(int direction);
     void releaseTransport();
-    void cancelTransport(){transportDirection_=0;}
+    void cancelTransport();
     void applySettings();
     void remember();
     void loadStations(const fs::path& file);
@@ -96,8 +108,10 @@ private:
     uint64_t shutdownAt_=0;
     uint64_t lockUntil_=0;
     bool updating_=true;
-    int transportDirection_=0,transportRepeats_=0;
-    uint64_t transportPressed_=0,transportTick_=0;
+    struct HeldKey {bool down=false,blocked=false,longSent=false;uint64_t next=0;unsigned repeats=0;};
+    std::array<HeldKey,size_t(Key::Lock)+1> heldKeys_{};
+    bool powerHeld_=false,powerSent_=false,powerOffRequested_=false;
+    uint64_t powerPressedAt_=0;
     std::array<int,4> clip_{0,0,128,64};
     std::array<std::wstring,2> metadataLabels_;
     uint64_t metadataAt_=0;
@@ -118,6 +132,8 @@ private:
     void select();
     void back();
     void refreshOnHome(Page previous);
+    void cancelHeldActions();
+    void tickHeldKeys();
     void move(int delta);
     void playQueue(std::vector<fs::path> paths,int index);
     void next(int direction,bool automatic=false);

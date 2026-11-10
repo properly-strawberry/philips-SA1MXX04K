@@ -209,7 +209,9 @@ earlier simple five-view interface description above.
 - Boot frames last 170 ms, followed by Updating… for three seconds. Shutdown
   holds Bye for 1 second, then plays original expanding-dot frames 8.0..8.6
   at (15,9), 500 ms each (4.5 seconds total). M opens options. Separate edge
-  slider/L locks/unlocks; it has no power-off hold. F9 previews the actual USB
+  slider locks left/unlocks center and holds right for power-off; L toggles lock
+  and P is momentary power. This supersedes the earlier lock-only preference.
+  F9 previews the actual USB
   screen; F10 the charge choices.
 
 ### Deep firmware bookmark - 2026-11-10
@@ -246,7 +248,7 @@ and 1497 host functions. Both sessions were closed; source bytes are unchanged.
 - Playback constructors 0x1537a6/0x153c2c establish title (5,3), metadata (5,20),
   times y37, progress (5,48), tiny counter y55, battery (107,51). Numeric fonts
   30/32 and radio font 31 are embedded too. Title/metadata cadence is still a
-  desktop approximation. Held Up/Down and upper/lower face keys seek after 450 ms,
+  desktop approximation. Held Up/Down and upper/lower face keys seek after 750 ms,
   accelerating 4/5/10/20 seconds; repeat thresholds come from 0x153296, while
   the desktop hold timing and units are adaptations. Shift+arrows seeks 5 sec.
 - Original optional FM constructor 0x154ec0 uses a vertical gauge at (5,0),
@@ -298,8 +300,8 @@ new pseudocode, assembly and file/evidence identity. REA session closed normally
   Up, Back left, Play/Pause right, Down. Separate volume keys stay. Shared
   `src/controls.h` maps shell controls and is covered by native tests. Keyboard
   Left=Back, Right=Select, Up/Down transport/navigation, Shift+Up/Down seek/preset.
-  Separate top lock-only slider is the owner's preference, not pixel-calibrated
-  hardware placement. M is a desktop Options shortcut, not a face button.
+  The later three-position top slider matches the owner's physical description;
+  placement remains hand drawn. M is a desktop Options shortcut, not a face button.
 - Lock/unlock is a timed full-screen dialog, not a permanent overlay. Constructor
   0x15802a creates 24x37 closed/open group-3 graphics at (52,11), theme variants
   15..17/18..20. Painter 0x157be0 clears its full 128x64 bounds using palette
@@ -429,3 +431,62 @@ completion, observed queue underruns, approximate peak buffer depth and error
 status; no paths/tags. tools/test_windows.ps1 exercises it on six fixture formats.
 Windows runtime checks still require the host; do not bypass the Wine restriction.
 See `docs/AUDIO_BUFFERING.md` for evidence, design and remaining limitations.
+
+### Key generator, repeat and original slider
+
+Read `re/docs/KEY_BEHAVIOR.md`; `key-input-dossiers.json` retains 17 source-backed
+function code/assembly records and `key-input-data.json` retains six byte reads.
+REA session closed normally. Main findings: short click 01, long-start 04,
+held release 08, repeat 10; volume accepts 401/404/410 and 501/504/510. Menus
+repeat/wrap; long Back 204 returns Home except modal/recording handlers that
+consume it. The generator at 14a842 and six handlers 14a90c..14aa6c supplies
+these events; btn_timer 173e8 uses a period of five kernel ticks.
+
+Default data at 1ed8 gives volume/power repeat count2 and navigation count6;
+initial delay flag1408=1 triples the initial count5 to15. Ordinary first long
+action therefore takes75 kernel ticks, repeats10/30 ticks. Root14c588 counts
+three key3 repeats (310), reset on308, then posts40350 for shutdown:95 ticks.
+Key8 is the lock latch; the root's40313/08040000 message configures the key
+manager's lock flag, not a power request. Exact tick milliseconds remain unknown.
+Desktop constants interpret ticks as10ms:750/100/300/950ms. Do not describe
+those milliseconds as measured firmware timing. Seek parameters4/5/10/20 are
+still interpreted as seconds by the desktop.
+
+`pressKey/releaseKey/cancelKeys` now drive actual physical gestures; semantic
+`input` stays one-shot. Taps act on release; holds do not also tap. Volume long
+start produces two levels (04 + initial10), then repeats. Confirmations, page
+transitions, wake and lock block an old gesture through release. Volume-limit
+editing ignores Up/Down; use Vol-/Vol+. Mouse and keyboard share the controller,
+OS key repeat is ignored, and releasing a different key does not finish a seek.
+
+The owner explicitly superseded the prior lock-only request: top slider left
+latches Lock, center unlocks, right is spring-return and held for power. Shell
+draws a full-height rounded recessed groove, broad rounded handle (~2/3 width),
+lock icon left/power right; it accepts clicks and captured dragging. L toggles
+lock; P is momentary power. Completed hold requests WM_CLOSE once, retaining
+settings/recordings and running shutdown animation. Focus/capture loss cancels
+unfinished holds without unlocking a left latch. `make test-keys` covers these
+paths with fake services; real Windows shell hit testing remains unverified.
+
+Slider shell refinement: volume buttons are on the left; the lock/unlock/power
+assembly is on the right. Icons and groove share a dark rounded backing plate.
+`SliderMotion` in controls.h separates continuous handle travel from the logical
+switch: the right half follows a captured drag and eases back to center, while
+left Lock snaps and latches. Grabbing the wide handle preserves its pointer
+offset. Power arms only near the right stop (with a small release hysteresis),
+not at an arbitrary one-third click boundary. Keyboard power also animates.
+Key tests cover partial-drag nonactivation, stop hysteresis, intermediate spring
+frames, left latching and keyboard travel. These are desktop mechanics, not
+new firmware timing evidence.
+
+Volume shell clarification: the left control is a single solid rounded rocker
+marked "- VOL +", with a central pivot and clickable minus/plus ends. Its center
+label is neutral, and the whole cap tilts when either end is held, including
+keyboard input. There is no center seam or pair of separately drawn buttons.
+The existing two volume key identities still supply tap/hold repeat. Keep the
+right slider's accepted placement unchanged when refining the rocker.
+The rocker cap is twice the power groove's width (156 vs 78 logical pixels),
+and its mounting socket's left margin matches the whole right switch block's
+right margin to the body edge (119 pixels each). main.cpp derives these bounds
+from shared layout constants; include the icon backing plate and rocker rim
+when measuring outer margins. Right block position remains unchanged.

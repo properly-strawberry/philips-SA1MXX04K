@@ -72,6 +72,7 @@ Interface::Interface(Backend& backend,fs::path music):backend_(backend),music_(s
 }
 std::wstring Interface::tr(int id) const { return firmwareText[std::clamp(settings.language,0,23)][std::clamp(id,0,234)]; }
 void Interface::setLibrary(std::vector<Song> songs) {
+    cancelHeldActions();
     library=std::move(songs);scanning=false;
     songLookup_.clear();for(size_t i=0;i<library.size();i++)songLookup_[library[i].path]=i;
     cachedDirectory_.clear();
@@ -79,7 +80,7 @@ void Interface::setLibrary(std::vector<Song> songs) {
 }
 void Interface::navigate(Page page) {
     auto previous=frame_.page;
-    transportDirection_=0;
+    cancelHeldActions();
     if(frame_.page==Page::VolumeLimit&&limitDraft_>=0){backend_.volume(volumeBeforeLimit_);limitDraft_=-1;}
     if(page==Page::Playing){metadataStarted_=false;titleStarted_=false;}
     if(page==Page::VolumeLimit){volumeBeforeLimit_=settings.volume;limitDraft_=settings.volume;volumeUntil_=0;}
@@ -92,6 +93,7 @@ void Interface::refreshOnHome(Page previous) {
     cachedDirectory_.clear();scanning=true;backend_.rescan();
 }
 void Interface::back() {
+    cancelHeldActions();
     auto previous=frame_.page;
     if(frame_.page==Page::VolumeLimit&&limitDraft_>=0){backend_.volume(volumeBeforeLimit_);limitDraft_=-1;}
     if(frame_.page==Page::Recording && backend_.recording().active) {
@@ -113,7 +115,7 @@ void Interface::back() {
     selectedAt_=now_;
     refreshOnHome(previous);
 }
-void Interface::notice(std::wstring value,int milliseconds) { notice_=std::move(value);noticeUntil_=now_+milliseconds;volumeUntil_=0; }
+void Interface::notice(std::wstring value,int milliseconds) {cancelHeldActions();notice_=std::move(value);noticeUntil_=now_+milliseconds;volumeUntil_=0; }
 void Interface::confirm(std::wstring value,std::function<void()> yes,bool restore) {
     std::vector<std::wstring> lines;std::wistringstream input(value);std::wstring line;while(std::getline(input,line))lines.push_back(line);
     std::vector<std::pair<int,std::wstring>> rows;for(size_t i=0;i<lines.size();i++)rows.emplace_back(lines.size()==1?17:lines.size()==2?(i?28:6):1+int(i)*16,lines[i]);
@@ -278,6 +280,7 @@ std::vector<Interface::Item> Interface::items() {
     return rows;
 }
 void Interface::select() {
+    cancelHeldActions();
     if(frame_.page==Page::Confirm){auto fn=std::move(confirm_);if(!history_.empty()){frame_=history_.back();history_.pop_back();}if(fn)fn();if(frame_.page==Page::Recording&&!backend_.recording().active)back();return;}
     if(frame_.page==Page::Home) {
         switch(frame_.selected) {
@@ -312,7 +315,7 @@ void Interface::move(int delta) {
 }
 void Interface::playQueue(std::vector<fs::path> paths,int index) {
     if(index<0||index>=int(paths.size()))return;
-    transportDirection_=0;
+    cancelHeldActions();
     metadataStarted_=false;titleStarted_=false;
     remember();pendingResume_=-1;
     queue_=std::move(paths);queueIndex_=index;radio=false;finishedHandled_=false;
@@ -369,18 +372,17 @@ void Interface::input(Key key) {
     bool wake=blank_||dim_;lastInput_=now_;blank_=dim_=false;
     // Firmware dialog 0x1020, kind 2: full screen, closed/open resource pair.
     // Five timer callbacks at period 25; 1250 ms is a desktop tick interpretation.
-    if(key==Key::Lock){locked=!locked;lockUntil_=now_+1250;noticeUntil_=volumeUntil_=0;transportDirection_=0;return;}
+    if(key==Key::Lock){cancelHeldActions();powerHeld_=false;locked=!locked;lockUntil_=now_+1250;noticeUntil_=volumeUntil_=0;return;}
     if(locked){lockUntil_=now_+1250;return;}
     lockUntil_=0;
     if(wake)return;
-    transportDirection_=0;
     booting_=false;
     if(frame_.page==Page::Confirm&&key!=Key::Select&&key!=Key::Back&&key!=Key::Home)return;
     noticeUntil_=0;
     if(key==Key::VolumeUp||key==Key::VolumeDown){int delta=key==Key::VolumeUp?1:-1;if(frame_.page==Page::VolumeLimit)adjustLimit(delta);else volume(delta);return;}
     if(frame_.page==Page::VolumeLimit&&(key==Key::Home||key==Key::Menu)){back();if(key==Key::Menu)return;}
     if(frame_.page==Page::CustomEQ&&key==Key::Back){if(frame_.selected>0)frame_.selected--;else back();return;}
-    if(key==Key::Home){if(frame_.page==Page::Recording){back();return;}if(frame_.page==Page::Confirm&&backend_.recording().active)back();auto previous=frame_.page;history_.clear();frame_.page=Page::Home;frame_.selected=frame_.scroll=0;selectedAt_=now_;refreshOnHome(previous);return;}
+    if(key==Key::Home){cancelHeldActions();if(frame_.page==Page::Recording){back();return;}if(frame_.page==Page::Confirm&&backend_.recording().active)back();auto previous=frame_.page;history_.clear();frame_.page=Page::Home;frame_.selected=frame_.scroll=0;selectedAt_=now_;refreshOnHome(previous);return;}
     if(key==Key::Back){back();return;}
     if(frame_.page==Page::Confirm){if(key==Key::Select)select();return;}
     if(key==Key::Menu){openOptions();return;}
@@ -398,22 +400,83 @@ void Interface::input(Key key) {
         else settings.bands[frame_.selected]=std::clamp(settings.bands[frame_.selected]-delta*2,-10.0,10.0);
         applySettings();return;
     }
-    if(frame_.page==Page::VolumeLimit){adjustLimit(-delta);return;}
+    if(frame_.page==Page::VolumeLimit)return;
     move(delta);
 }
 void Interface::pressTransport(int direction) {
-    if(frame_.page!=Page::Playing||locked||booting_||updating_||blank_||dim_||!backend_.audio().error.empty()){input(direction<0?Key::Previous:Key::Next);return;}
-    if(transportDirection_==direction)return;
-    lockUntil_=0;
-    transportDirection_=direction;transportPressed_=transportTick_=lastInput_=now_;transportRepeats_=0;
+    pressKey(direction<0?Key::Up:Key::Down);
 }
 void Interface::releaseTransport() {
-    int direction=transportDirection_;bool seeking=transportRepeats_>0;transportDirection_=0;
-    if(direction&&!seeking&&frame_.page==Page::Playing)input(direction<0?Key::Previous:Key::Next);
+    for(auto key:{Key::Up,Key::Down})if(heldKeys_[size_t(key)].down&&!heldKeys_[size_t(key)].blocked){releaseKey(key);break;}
 }
+void Interface::cancelTransport() {
+    for(auto key:{Key::Up,Key::Down})heldKeys_[size_t(key)].blocked=true;
+}
+void Interface::cancelHeldActions() {
+    for(auto& held:heldKeys_)if(held.down)held.blocked=true;
+}
+void Interface::cancelKeys() {
+    for(auto& held:heldKeys_)held={};
+    releaseSlider();
+}
+void Interface::pressKey(Key key) {
+    size_t index=size_t(key);if(index>=heldKeys_.size())return;
+    auto& held=heldKeys_[index];if(held.down)return;
+    held={true,false,false,now_+KeyHoldDelay,0};
+    if(booting_||updating_||shuttingDown_){held.blocked=true;return;}
+    if(key==Key::Lock){input(key);held.blocked=true;return;}
+    if(locked||blank_||dim_){input(key);held.blocked=true;return;}
+    lastInput_=now_;lockUntil_=0;
+    if(frame_.page==Page::Confirm&&key!=Key::Select&&key!=Key::Back){held.blocked=true;return;}
+    if(key==Key::Up||key==Key::Down)heldKeys_[size_t(key==Key::Up?Key::Down:Key::Up)].blocked=true;
+    if(key!=Key::Up&&key!=Key::Down&&key!=Key::VolumeUp&&key!=Key::VolumeDown&&key!=Key::Back&&key!=Key::Select) {
+        input(key);held.blocked=true;
+    }
+}
+void Interface::releaseKey(Key key) {
+    size_t index=size_t(key);if(index>=heldKeys_.size())return;
+    auto held=heldKeys_[index];heldKeys_[index]={};
+    if(held.down&&!held.blocked&&!held.longSent)input(key);
+}
+void Interface::tickHeldKeys() {
+    for(size_t i=0;i<heldKeys_.size();i++) {
+        auto& held=heldKeys_[i];if(!held.down||held.blocked||now_<held.next)continue;
+        if(locked||blank_||dim_||booting_||updating_){held.blocked=true;continue;}
+        Key key=Key(i);bool first=!held.longSent;held.longSent=true;lastInput_=now_;
+        if(key==Key::Back) {
+            held.blocked=true;
+            input(frame_.page==Page::Recording||frame_.page==Page::Confirm?Key::Back:Key::Home);
+        } else if(key==Key::Select) {
+            held.blocked=true;if(frame_.page!=Page::CustomEQ)input(Key::Select);
+        } else if(key==Key::VolumeUp||key==Key::VolumeDown) {
+            input(key);if(first&&!held.blocked)input(key); // long-start and its first repeat
+            held.next+=VolumeRepeatDelay;if(held.next<=now_)held.next=now_+VolumeRepeatDelay;
+        } else if(key==Key::Up||key==Key::Down) {
+            if(frame_.page==Page::Playing) {
+                auto info=backend_.audio();unsigned count=++held.repeats;
+                int step=count<10?4:count<20?5:count<40?10:20;
+                if(info.error.empty()&&info.duration>0)backend_.seek(std::clamp(info.position+(key==Key::Up?-step:step),0.0,std::max(0.0,info.duration-.05)));
+            } else input(key);
+            held.next+=NavigationRepeatDelay;if(held.next<=now_)held.next=now_+NavigationRepeatDelay;
+        }
+    }
+}
+void Interface::moveSlider(SliderPosition position) {
+    if(booting_||updating_||shuttingDown_)return;
+    cancelHeldActions();
+    if(position!=SliderPosition::Power)releaseSlider();
+    bool lock=position==SliderPosition::Lock;
+    if(locked!=lock)input(Key::Lock);
+    lastInput_=now_;blank_=dim_=false;
+    if(position==SliderPosition::Power&&!powerHeld_) {
+        powerHeld_=true;powerSent_=false;powerPressedAt_=now_;
+    }
+}
+void Interface::releaseSlider(){powerHeld_=false;powerSent_=false;}
+bool Interface::takePowerOffRequest(){bool requested=powerOffRequested_;powerOffRequested_=false;return requested;}
 void Interface::shutdown() {
     if(shuttingDown_)return;
-    shuttingDown_=true;shutdownAt_=now_;transportDirection_=0;
+    cancelKeys();shuttingDown_=true;shutdownAt_=now_;
 }
 bool Interface::shutdownFinished() const { return shuttingDown_&&now_-shutdownAt_>=shutdownDuration; }
 void Interface::tick(uint64_t millis) {
@@ -423,12 +486,9 @@ void Interface::tick(uint64_t millis) {
     if(updating_&&now_>=firstTick_+7400)updating_=false;
     dim_=settings.backlight>0&&now_-lastInput_>uint64_t(settings.backlight)*1000;
     blank_=settings.screenOff>0&&now_-lastInput_>uint64_t(settings.screenOff)*1000;
+    tickHeldKeys();
+    if(powerHeld_&&!powerSent_&&now_-powerPressedAt_>=PowerHoldDelay){powerSent_=true;powerOffRequested_=true;}
     auto info=backend_.audio();
-    if(transportDirection_&&frame_.page==Page::Playing&&!locked&&now_-transportPressed_>=450&&now_-transportTick_>=250) {
-        transportTick_=lastInput_=now_;transportRepeats_++;
-        int step=transportRepeats_<10?4:transportRepeats_<20?5:transportRepeats_<40?10:20;
-        if(info.duration>0)backend_.seek(std::clamp(info.position+transportDirection_*step,0.0,std::max(0.0,info.duration-.05)));
-    }
     if(pendingResume_>=0&&info.duration>0){backend_.seek(pendingResume_);pendingResume_=-1;}
     if(info.finished&&!finishedHandled_&&!radio){remember();finishedHandled_=true;next(1,true);}
     if(radio&&radioCandidate_==-2&&now_>=tuneAt_) {
@@ -536,7 +596,8 @@ void Interface::drawMessage(const std::vector<std::pair<int,std::wstring>>& rows
     clip_={0,0,128,64};
 }
 void Interface::status(const TrackInfo& info) {
-    image(2*256+(transportRepeats_&&transportDirection_?(transportDirection_<0?1:3):info.paused?4:info.playing?5:2),5,35);
+    auto seeking=[this](Key key){const auto& h=heldKeys_[size_t(key)];return h.down&&!h.blocked&&h.repeats>0;};
+    image(2*256+(seeking(Key::Up)?1:seeking(Key::Down)?3:info.paused?4:info.playing?5:2),5,35);
     auto padded=[](size_t value){auto s=std::to_wstring(value);return std::wstring(s.size()<4?4-s.size():0,L'0')+s;};
     number(5,55,padded(queueIndex_>=0?size_t(queueIndex_+1):0),0xffffff,true,2,20);number(25,55,L"/",0xffffff,true);number(31,55,padded(queue_.size()),0xffffff,true,0,20);
     if(settings.repeat)image(2*256+(settings.repeat==2?9:12)+settings.theme,55,52);

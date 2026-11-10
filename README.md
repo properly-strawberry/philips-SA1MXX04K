@@ -79,18 +79,20 @@ templates, never the local music library or station configuration.
 | Control | Action |
 | --- | --- |
 | Up / Down | Browse; during playback, tap for previous/next or hold to seek |
-| Left / Backspace / Escape | Back |
+| Left / Backspace / Escape | Back; hold for main menu in ordinary menus |
 | Right / Enter / Space | Select or play/pause |
 | Shift + Up / Down | Seek five seconds; on radio, jump between configured stations |
-| `+` / `-` | Volume; separate Vol+ and Vol- shell keys also work |
-| `L` or the edge slider | Lock/unlock |
+| `+` / `-` | Volume; the left-side "- VOL +" rocker has clickable ends |
+| Right edge slider | Left latches Lock; center unlocks; hold spring-return right for power-off |
+| `L` / hold `P` | Toggle lock / hold power-off |
 | Home | Main menu |
 | `M` | Current-track shortcuts, or radio options |
 | `S` / `R` | Shuffle / cycle repeat modes |
 | F5 | Rescan media and reload stations |
 | F9 / F10 | Connected-to-PC / charge-choice previews |
 
-The shell buttons and menu rows are clickable. Confirmations use Play/OK and
+The shell buttons and menu rows are clickable. Held volume and navigation keys
+repeat; short actions complete on release. Confirmations use Play/OK and
 Back/Cancel; Up/Down does not choose an answer. The M track menu is a desktop
 shortcut, while Music > Playlists follows the recovered original menu.
 Back from playback restores the remembered browser cursor; it does not move
@@ -149,6 +151,7 @@ Then build and package:
 ```sh
 make test-ui
 make test-audio
+make test-keys
 make package
 ```
 
@@ -167,6 +170,11 @@ runtime checks, run `tools/test_windows.ps1` on Windows as described in PLAYER.m
 sample ordering, decoder stalls, seek/stop cancellation and EOF/error tails.
 Playback prefills before starting Windows output; see
 [the buffering audit](docs/AUDIO_BUFFERING.md) for the design and validation limits.
+
+`make test-keys` checks held-key repeat, seek acceleration, safe modal transitions,
+wake/lock suppression and the spring-return power slider. Firmware event and
+timer evidence is in [KEY_BEHAVIOR.md](re/docs/KEY_BEHAVIOR.md); exact physical
+tick duration remains unverified.
 
 ## Firmware research
 
