@@ -405,3 +405,27 @@ redraws/navigation or an ignored locked/wake key. The current playback queue is
 preserved. Native tests cover repeated returns, a newly created file before scan
 completion, refreshed library delivery and playback continuity. This is another
 desktop preference, not a firmware claim; startup retains its existing scan.
+
+### Playback buffering follow-up
+
+The owner reports brief hiccups during steady playback, without navigation.
+The prior six waveOut slots held only one codec frame each, commonly about
+128-157 ms total for AAC/MP3, despite 4096-frame slot allocations. This was
+a source-confirmed weakness, not a measured root cause on her Windows system.
+
+`src/audio_buffer.h` now supplies a bounded two-second raw PCM ring from a
+separate decoder worker. Output submits full 2048-frame blocks to six prepared
+headers (256 ms), prefilled while paused; startup/seek/rebuffer target 500 ms
+or EOF. waveOut event callbacks wake the output worker, which has above-normal
+priority; scans have below-normal priority. EQ/volume are applied at submission,
+not when reading ahead. Seeking resets both queues/EQ and rejects old revisions.
+`BufferedDecoder` stops its producer before closing FFmpeg and keeps the
+interrupt state alive through decoder cleanup.
+
+`make test-audio` checks actual ring behavior with synthetic PCM, including a
+blocked decoder, wrap/packet sizes, seeks/EOF, cancellation and error tails.
+`--playback-test INPUT REPORT.txt` runs silent Windows output and reports only
+completion, observed queue underruns, approximate peak buffer depth and error
+status; no paths/tags. tools/test_windows.ps1 exercises it on six fixture formats.
+Windows runtime checks still require the host; do not bypass the Wine restriction.
+See `docs/AUDIO_BUFFERING.md` for evidence, design and remaining limitations.

@@ -63,6 +63,7 @@ public:
 void beginScan() {
     scanStop=true;if(scanner.joinable())scanner.join();scanStop=false;ui->scanning=true;
     scanner=std::thread([] {
+        SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_BELOW_NORMAL);
         std::vector<player::Song> found;
         for(auto root:{musicDir,layoutDir/L"Recordings"/L"Voice"}) {
             std::error_code ec;
@@ -283,6 +284,7 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     appDir=fs::path(executable.data()).parent_path();musicDir=appDir/L"Music";
     int argc;auto** args=CommandLineToArgvW(GetCommandLineW(),&argc);
     if(argc==4&&wcscmp(args[1],L"--decode-test")==0){int result=Audio::decodeTest(args[2],args[3]);LocalFree(args);return result;}
+    if(argc==4&&wcscmp(args[1],L"--playback-test")==0){int result=Audio::playbackTest(args[2],args[3]);LocalFree(args);return result;}
     if(argc==5&&wcscmp(args[1],L"--decode-seek-test")==0){wchar_t* end=nullptr;double seconds=wcstod(args[4],&end);int result=end!=args[4]&&!*end&&std::isfinite(seconds)&&seconds>=0?Audio::decodeTest(args[2],args[3],seconds):1;LocalFree(args);return result;}
     for(int i=1;i<argc;i++) {
         if(wcscmp(args[i],L"--music")==0&&i+1<argc)musicDir=fs::absolute(args[++i]);

@@ -12,6 +12,9 @@ struct TrackInfo {
     std::wstring title, artist, album, error;
     double duration=0, position=0;
     bool playing=false, paused=false, finished=false;
+    double bufferedSeconds=0;
+    unsigned underruns=0;
+    bool buffering=false;
 };
 
 // FFmpeg owns decoding/resampling; the worker owns every waveOut handle/buffer.
@@ -29,6 +32,7 @@ public:
     static TrackInfo probe(const std::wstring& source,const std::function<bool()>& cancel={});
     TrackInfo snapshot();
     static int decodeTest(const std::wstring& input, const std::wstring& output,double seekSeconds=-1);
+    static int playbackTest(const std::wstring& input,const std::wstring& report);
 private:
     void run();
     std::mutex mutex_;

@@ -95,8 +95,13 @@ skipped. Formats depend on FFmpeg; the browser includes MP3, FLAC, WAV, Ogg,
 Opus, M4A/AAC, WMA, AIFF, APE, WavPack, ALAC and M4B.
 
 Settings and the last playback position persist to `philips.ini` beside the executable.
-Media is decoded in a worker with a bounded buffer and resampled to stereo
-48 kHz signed 16-bit PCM, played through Windows waveOut. Playback reads files;
+Media is decoded and resampled to stereo 48 kHz signed 16-bit PCM in a dedicated
+read-ahead worker. A bounded two-second PCM buffer feeds six full 2048-frame
+Windows waveOut blocks (256 ms total). Playback and seeking prefill 500 ms, or
+the remaining audio for shorter files, before starting output. Windows buffer
+events wake the output worker; a decoder/disk/network stall does not block it.
+Pause retains buffered audio; seeking and track changes discard stale samples.
+The same buffering applies to internet radio. Playback reads files;
 Delete in the M shortcuts removes the current file only after Play/OK confirmation.
 Confirmation screens use original centered prompt rows and Play/OK plus Back/Cancel
 captions, not a selectable Yes/No list. Up/Down does not change the answer.
@@ -179,19 +184,33 @@ Diagnostic command lines (paths may contain Unicode):
 ```text
 philips.exe --decode-test INPUT OUTPUT.s16le
 philips.exe --decode-seek-test INPUT OUTPUT.s16le SECONDS
+philips.exe --playback-test INPUT REPORT.txt
 philips.exe --music TEST_MUSIC --screenshot OUTPUT.png
 philips.exe --music TEST_MUSIC --smoke-test REPORT.txt --screenshot OUTPUT.png
 ```
 
 The decode test writes raw stereo 48 kHz PCM using the same decoder as playback.
+The playback test silently plays a local file through the actual Windows output
+path and reports `finished`, `underruns`, `peak_buffer_seconds` and `error` as
+key=value lines. It exits unsuccessfully on an error, timeout or output underrun.
+Its report contains no media paths or metadata. Buffer depth is approximate
+(the current device block is counted in full); driver-level glitches are not
+necessarily visible as application queue underruns.
 The UI smoke test expects at least two tracks. Diagnostic
 screenshots and reports are explicit outputs, not normal application behavior.
 
 From the repository root on Windows, run `powershell -ExecutionPolicy Bypass
 -File tools/test_windows.ps1` for generated fixtures, sample-exact PCM comparisons
 against the SDK's FFmpeg executable (WAV, FLAC, MP3, AAC, Opus and mono 22.05 kHz),
-invalid-file rejection, sample-exact one-second seeks in WAV/FLAC, and the UI
+invalid-file rejection, sample-exact one-second seeks in WAV/FLAC, buffered
+waveOut playback/prefill/EOF/underrun checks for all six formats, and the UI
 smoke test. Results go to `gen/player-tests/`.
+
+`make test-audio` tests the actual portable read-ahead buffer natively: exact
+sample order across codec packet sizes and ring wraps, bounded storage, a
+deliberately stalled decoder, seek cancellation, EOF seeks, stop while blocked,
+and short-file/error tails. These tests use synthetic PCM and do not exercise
+FFmpeg or a Windows audio driver. See `docs/AUDIO_BUFFERING.md` for the audit.
 
 `make test-ui` runs the actual portable interface implementation natively on
 Linux with fake audio/microphone services. It covers navigation, all 24 language

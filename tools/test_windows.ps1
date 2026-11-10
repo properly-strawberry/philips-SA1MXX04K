@@ -74,6 +74,16 @@ foreach ($inputFile in @($wav, $flac, $mp3, $aac, $opus, $mono)) {
     Check ((Get-FileHash $actual).Hash -eq (Get-FileHash $expected).Hash) "sample-exact FFmpeg reference: $id"
 }
 $broken = Join-Path $work 'broken.mp3'
+foreach ($inputFile in @($wav, $flac, $mp3, $aac, $opus, $mono)) {
+    $id = [IO.Path]::GetFileName($inputFile)
+    $playbackReport = Join-Path $work ($id + '.playback.txt')
+    Remove-Item $playbackReport -ErrorAction SilentlyContinue
+    Check ((Run-Player @('--playback-test', $inputFile, $playbackReport)) -eq 0) "buffered waveOut playback: $id"
+    $stats = Get-Content -Raw $playbackReport | ConvertFrom-StringData
+    Check ($stats.finished -eq '1' -and $stats.error -eq '0') "playback drains to EOF: $id"
+    Check ($stats.underruns -eq '0') "no output underruns: $id"
+    Check ([double]::Parse($stats.peak_buffer_seconds, [Globalization.CultureInfo]::InvariantCulture) -ge 0.5) "startup prebuffer and read-ahead: $id"
+}
 foreach ($inputFile in @($wav, $flac)) {
     $id = [IO.Path]::GetFileName($inputFile)
     $actual = Join-Path $work ($id + '.seek.pcm')

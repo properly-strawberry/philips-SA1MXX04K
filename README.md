@@ -148,6 +148,7 @@ Then build and package:
 
 ```sh
 make test-ui
+make test-audio
 make package
 ```
 
@@ -161,6 +162,11 @@ confirmation actions, injected full-screen failures and popup click guards,
 recording decisions, radio JSON and EQ behavior. It does
 not establish real microphone or network operation on Windows. For decoder and
 runtime checks, run `tools/test_windows.ps1` on Windows as described in PLAYER.md.
+
+`make test-audio` checks the bounded two-second PCM read-ahead buffer, including
+sample ordering, decoder stalls, seek/stop cancellation and EOF/error tails.
+Playback prefills before starting Windows output; see
+[the buffering audit](docs/AUDIO_BUFFERING.md) for the design and validation limits.
 
 ## Firmware research
 

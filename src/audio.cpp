@@ -3,6 +3,7 @@
 #include <mmsystem.h>
 #include "audio.h"
 #include "equalizer.h"
+#include "audio_buffer.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -152,37 +153,62 @@ public:
     }
 };
 
+// The reader must stop before FFmpeg closes, and its interrupt state must
+// remain alive until the decoder's network/file cleanup has completed.
+struct BufferedDecoder {
+    PcmReadAhead ahead;
+    Decoder decoder;
+    ~BufferedDecoder(){ahead.stop();}
+};
+
 struct Output {
     HWAVEOUT handle=nullptr;
-    static constexpr int N=6, Frames=4096;
+    HANDLE event=nullptr;
+    static constexpr int N=6, Frames=2048;
     std::array<WAVEHDR,N> headers{};
     std::array<std::array<int16_t,Frames*2>,N> samples{};
     Output() {
         WAVEFORMATEX f{}; f.wFormatTag=WAVE_FORMAT_PCM; f.nChannels=2; f.nSamplesPerSec=48000;
         f.wBitsPerSample=16; f.nBlockAlign=4; f.nAvgBytesPerSec=192000;
-        if(waveOutOpen(&handle,WAVE_MAPPER,&f,0,0,CALLBACK_NULL)!=MMSYSERR_NOERROR)
-            throw std::runtime_error("Windows could not open an audio output device");
+        event=CreateEventW(nullptr,TRUE,FALSE,nullptr);
+        if(!event)throw std::runtime_error("Cannot create audio output event");
+        try {
+            if(waveOutOpen(&handle,WAVE_MAPPER,&f,reinterpret_cast<DWORD_PTR>(event),0,CALLBACK_EVENT)!=MMSYSERR_NOERROR)
+                throw std::runtime_error("Windows could not open an audio output device");
+            pause();
+            for(int i=0;i<N;i++) {
+                headers[i].lpData=reinterpret_cast<char*>(samples[i].data());headers[i].dwBufferLength=sizeof(samples[i]);
+                if(waveOutPrepareHeader(handle,&headers[i],sizeof(WAVEHDR))!=MMSYSERR_NOERROR)
+                    throw std::runtime_error("Cannot prepare audio output buffers");
+            }
+        } catch(...) {close();throw;}
     }
-    ~Output() {
-        if(!handle) return;
-        waveOutReset(handle);
-        for(auto& h:headers) if(h.dwFlags & WHDR_PREPARED) waveOutUnprepareHeader(handle,&h,sizeof(h));
-        waveOutClose(handle);
+    ~Output(){close();}
+    void close() {
+        if(handle) {
+            waveOutReset(handle);
+            for(auto& h:headers) if(h.dwFlags & WHDR_PREPARED) waveOutUnprepareHeader(handle,&h,sizeof(h));
+            waveOutClose(handle);handle=nullptr;
+        }
+        if(event){CloseHandle(event);event=nullptr;}
     }
-    void reset() { waveOutReset(handle); }
+    void reset() {if(waveOutReset(handle)!=MMSYSERR_NOERROR)throw std::runtime_error("Cannot reset audio output");pause();}
+    void pause() {if(waveOutPause(handle)!=MMSYSERR_NOERROR)throw std::runtime_error("Cannot pause audio output");}
+    void restart() {if(waveOutRestart(handle)!=MMSYSERR_NOERROR)throw std::runtime_error("Cannot resume audio output");}
+    void wait() {WaitForSingleObject(event,5);}
+    void poll() {ResetEvent(event);}
     int freeSlot() {
         for(int i=0;i<N;i++) if(!(headers[i].dwFlags&WHDR_INQUEUE)) return i;
         return -1;
     }
     bool empty() { return freeCount()==N; }
     int freeCount() { int n=0; for(auto& h:headers) if(!(h.dwFlags&WHDR_INQUEUE)) n++; return n; }
+    size_t queuedFrames() {size_t n=0;for(auto& h:headers)if(h.dwFlags&WHDR_INQUEUE)n+=h.dwBufferLength/4;return n;}
     void submit(int slot,const int16_t* pcm,size_t count,int volume,Equalizer& eq) {
         auto& h=headers[slot];
-        if(h.dwFlags&WHDR_PREPARED) waveOutUnprepareHeader(handle,&h,sizeof(h));
         for(size_t i=0;i<count;i++) samples[slot][i]=eq.process(pcm[i],int(i%2),volume);
-        h={}; h.lpData=reinterpret_cast<char*>(samples[slot].data()); h.dwBufferLength=DWORD(count*2);
-        if(waveOutPrepareHeader(handle,&h,sizeof(h))!=MMSYSERR_NOERROR ||
-           waveOutWrite(handle,&h,sizeof(h))!=MMSYSERR_NOERROR) throw std::runtime_error("Audio output failed");
+        h.dwBufferLength=DWORD(count*sizeof(int16_t));
+        if(waveOutWrite(handle,&h,sizeof(h))!=MMSYSERR_NOERROR) throw std::runtime_error("Audio output failed");
     }
     double position() {
         MMTIME t{}; t.wType=TIME_SAMPLES;
@@ -208,6 +234,7 @@ TrackInfo Audio::probe(const std::wstring& source,const std::function<bool()>& c
 TrackInfo Audio::snapshot() { std::lock_guard<std::mutex> l(mutex_); return info_; }
 void Audio::run() {
     av_log_set_level(AV_LOG_ERROR);
+    SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_ABOVE_NORMAL);
     unsigned active=0;
     for(;;) {
         std::wstring path; unsigned generation;
@@ -215,31 +242,53 @@ void Audio::run() {
         if(generation==active || path.empty()) { Sleep(10); continue; }
         active=generation;
         try {
-            Decoder decoder; decoder.open(path,[this,active]{std::lock_guard<std::mutex> l(mutex_);return quit_||generation_!=active;}); Output output;Equalizer eq;
-            { std::lock_guard<std::mutex> l(mutex_); if(generation_!=active) continue; info_=decoder.info; info_.playing=true; }
-            std::vector<int16_t> pcm; size_t cursor=0; bool end=false, wasPaused=false;
-            double base=0;
+            BufferedDecoder source;auto& decoder=source.decoder;auto& ahead=source.ahead;
+            decoder.open(path,[this,active,&ahead]{std::lock_guard<std::mutex> l(mutex_);return quit_||generation_!=active||ahead.interrupted();});
+            Output output;Equalizer eq;
+            ahead.start([&decoder](auto& pcm){return decoder.read(pcm);},[&decoder](double seconds){decoder.seek(seconds);});
+            { std::lock_guard<std::mutex> l(mutex_); if(generation_!=active) continue; info_=decoder.info; info_.playing=true;info_.buffering=true; }
+            std::array<int16_t,Output::Frames*2> pcm{};
+            bool priming=true,running=false;unsigned underruns=0;double base=0;
             for(;;) {
+                output.poll();
                 bool paused, abort; double seek; int volume;std::array<double,5> gains;
                 { std::lock_guard<std::mutex> l(mutex_); abort=quit_||generation_!=active; paused=paused_; seek=seek_; seek_=-1; volume=volume_;gains=gains_; }
                 if(abort) break;
-                if(seek>=0) { output.reset(); decoder.seek(seek); eq.reset();pcm.clear(); cursor=0; end=false; base=seek; }
-                if(paused!=wasPaused || seek>=0) { if(paused) waveOutPause(output.handle); else waveOutRestart(output.handle); wasPaused=paused; }
-                { std::lock_guard<std::mutex> l(mutex_); if(generation_==active) { info_.position=base+output.position(); info_.paused=paused; } }
-                if(paused) { Sleep(5); continue; }
-                int slot=output.freeSlot();
-                if(slot<0) { Sleep(3); continue; }
-                if(cursor>=pcm.size() && !end) { end=!decoder.read(pcm); cursor=0; }
-                if(end) {
-                    if(output.empty()) { std::lock_guard<std::mutex> l(mutex_); if(generation_==active) { info_.playing=false; info_.finished=true; info_.position=info_.duration; } break; }
-                    Sleep(3); continue;
+                if(seek>=0) {output.reset();ahead.seek(seek);eq.reset();base=seek;priming=true;running=false;}
+                if(paused&&running){output.pause();running=false;}
+                auto state=ahead.state();
+                if(!paused&&running&&output.empty()&&(!state.finished||state.frames)) {
+                    ++underruns;output.pause();running=false;priming=true;
                 }
-                size_t count=std::min(pcm.size()-cursor,size_t(Output::Frames*2));
-                eq.configure(gains);output.submit(slot,pcm.data()+cursor,count,volume,eq); cursor+=count;
+                // Build a 500-ms reserve, then queue every free output block
+                // before releasing the paused device. Short files start at EOF.
+                if(!paused&&priming&&(state.frames>=PcmReadAhead::Rate/2||state.finished))priming=false;
+                if(!paused&&!priming) {
+                    eq.configure(gains);
+                    for(int slot;(slot=output.freeSlot())>=0;) {
+                        size_t frames=ahead.pop(pcm.data(),Output::Frames);
+                        if(!frames)break;
+                        output.submit(slot,pcm.data(),frames*2,volume,eq);
+                    }
+                    if(!running&&!output.empty()){output.restart();running=true;}
+                }
+                state=ahead.state();
+                { std::lock_guard<std::mutex> l(mutex_); if(generation_==active) {
+                    info_.position=base+output.position();info_.paused=paused;
+                    info_.bufferedSeconds=double(state.frames+output.queuedFrames())/PcmReadAhead::Rate;
+                    info_.buffering=priming&&!paused;info_.underruns=underruns;
+                } }
+                if(!paused&&state.finished&&!state.frames&&output.empty()) {
+                    if(!state.error.empty())throw std::runtime_error(state.error);
+                    std::lock_guard<std::mutex> l(mutex_);
+                    if(generation_==active){info_.playing=false;info_.finished=true;info_.position=info_.duration;info_.bufferedSeconds=0;info_.buffering=false;}
+                    break;
+                }
+                output.wait();
             }
         } catch(const std::exception& error) {
             std::lock_guard<std::mutex> l(mutex_);
-            if(generation_==active) { info_.playing=false; info_.error=wide(error.what()); }
+            if(generation_==active) { info_.playing=false;info_.buffering=false;info_.bufferedSeconds=0; info_.error=wide(error.what()); }
         }
     }
 }
@@ -254,4 +303,21 @@ int Audio::decodeTest(const std::wstring& input,const std::wstring& output,doubl
         printf("Decoded %llu stereo frames at 48000 Hz; duration=%.6f; title=%s\n",(unsigned long long)total,d.info.duration,utf8(d.info.title).c_str());
         return total ? 0 : 1;
     } catch(const std::exception& e) { fprintf(stderr,"%s\n",e.what()); return 1; }
+}
+
+int Audio::playbackTest(const std::wstring& input,const std::wstring& report) {
+    Audio audio;audio.volume(0);audio.play(input);
+    auto started=GetTickCount64();TrackInfo info;double peak=0;
+    for(;;) {
+        info=audio.snapshot();peak=std::max(peak,info.bufferedSeconds);
+        if(info.finished||!info.error.empty())break;
+        double timeout=15000+(std::isfinite(info.duration)?std::max(0.0,info.duration)*1000:0);
+        if(GetTickCount64()-started>timeout)break;
+        Sleep(10);
+    }
+    FILE* file=_wfopen(report.c_str(),L"wb");if(!file)return 1;
+    // Diagnostic contains no source path, tags or other library information.
+    fprintf(file,"finished=%d\nunderruns=%u\npeak_buffer_seconds=%.6f\nerror=%d\n",int(info.finished),info.underruns,peak,int(!info.error.empty()));
+    fclose(file);
+    return info.finished&&info.error.empty()&&!info.underruns?0:1;
 }
