@@ -72,6 +72,9 @@ services remain adaptations.
   screen rotation, language, information and a settings-only factory reset.
 
 All songs scans Music recursively. Artists and Albums use FFmpeg metadata.
+Returning to the main menu with the large icons starts a fresh background scan
+and refreshes the folder cache. New music appears without restarting the player;
+the current playback queue continues while scanning.
 Folder view browses individual directories, with folders first and both folders
 and files sorted alphabetically without regard to case. Artist and album lists
 also sort without regard to case. Playlists retain their saved order.

@@ -66,6 +66,30 @@ static void sortingTests(const fs::path& root) {
     assert(b.source==songs[1].path.wstring());
     std::cout<<"PASS case-insensitive folder/file/artist/album sorting, folder queue order and preserved playlist order\n";
 }
+static void homeRefreshTests(const fs::path& root) {
+    auto music=root/"home-refresh"/"Music";fs::create_directories(music);
+    auto existing=music/"existing.wav",added=music/"new.wav";
+    fs::remove(added);std::ofstream(existing).put(0);
+    Fake b;Interface v(b,music);v.tick(100);v.skipBoot();v.setLibrary({{existing,{}}});
+    v.navigate(Page::Folders);assert(v.labels()==std::vector<std::wstring>{L"existing.wav"});
+    v.input(Key::Select);v.input(Key::Back);assert(v.page()==Page::Folders&&b.scans==0);
+    std::ofstream(added).put(0);v.input(Key::Back);
+    assert(v.page()==Page::Home&&v.scanning&&b.scans==1&&b.plays==1&&b.state.playing);
+    v.render();v.tick(200);v.input(Key::Home);v.input(Key::Back);v.input(Key::Down);assert(b.scans==1);
+    // Folder data refreshes immediately, before the background library completes.
+    v.navigate(Page::Folders);assert(v.labels()==std::vector<std::wstring>({L"existing.wav",L"new.wav"}));
+    v.input(Key::Home);assert(v.page()==Page::Home&&b.scans==2);
+    v.setLibrary({{existing,{}},{added,{}}});assert(!v.scanning&&b.plays==1&&b.source==existing.wstring());
+    v.navigate(Page::Songs);assert(v.labels()==std::vector<std::wstring>({L"existing",L"new"}));
+    v.input(Key::Down);v.input(Key::Select);assert(b.source==added.wstring());v.input(Key::Home);
+    assert(b.scans==3&&b.plays==2&&v.queueIndex()==1&&b.state.playing);
+    v.navigate(Page::Settings);v.input(Key::Lock);v.input(Key::Home);assert(v.page()==Page::Settings&&b.scans==3);
+    v.input(Key::Lock);v.input(Key::Home);assert(v.page()==Page::Home&&b.scans==4);
+    v.navigate(Page::Music);v.navigate(Page::Songs);v.input(Key::Back);assert(v.page()==Page::Music&&b.scans==4);
+    v.input(Key::Back);assert(v.page()==Page::Home&&b.scans==5);
+    v.navigate(Page::Settings);v.navigate(Page::Home);assert(b.scans==6);
+    std::cout<<"PASS rescan on main-menu entry; immediate folder-cache refresh; new library files; playback and queue retained; no rescans for home redraws, submenu Back or locked Home\n";
+}
 static void metadataTests(const fs::path& root) {
     auto init=[](Fake& b,Interface& v,int theme,const std::wstring& artist,const std::wstring& album){b.state.playing=true;b.state.duration=180;b.state.title=L"Title";b.state.artist=artist;b.state.album=album;v.settings.theme=theme;v.tick(100);v.skipBoot();v.navigate(Page::Playing);v.render();};
     for(int theme=0;theme<3;theme++) {
@@ -191,7 +215,7 @@ static void messageTests(const fs::path& root) {
 int main(int argc,char** argv) {
     assert(argc==2);fs::path root=fs::absolute(argv[1]);fs::create_directories(root/"Music"/"Album");
     std::ofstream(root/"Music"/"one.wav").put(0);std::ofstream(root/"Music"/"Album"/"two.flac").put(0);
-    sortingTests(root);metadataTests(root);titleTests(root);dialogTests(root);volumeTests(root);buttonTests(root);lockTests(root);messageTests(root);
+    sortingTests(root);homeRefreshTests(root);metadataTests(root);titleTests(root);dialogTests(root);volumeTests(root);buttonTests(root);lockTests(root);messageTests(root);
     Fake backend;Interface ui(backend,root/"Music");ui.tick(100);ui.skipBoot();
     {Fake b;Interface boot(b,root/"Music");boot.tick(100);assert(boot.booting());boot.tick(2300);assert(boot.booting());boot.tick(4501);assert(!boot.booting()&&boot.updating());dump(boot,root/"updating.ppm");requireText(boot,glyphs,L"Updating\u2026",-1,30);requireText(boot,glyphs,L"0%",-1,45);requireAsset(boot,5*256,57,8);boot.input(Key::Select);assert(boot.page()==Page::Home);boot.click(60,40);assert(boot.page()==Page::Home);boot.tick(5925);dump(boot,root/"updating-50.ppm");requireText(boot,glyphs,L"50%",-1,45);requireAsset(boot,7*256+29,5,59);boot.tick(7350);dump(boot,root/"updating-100.ppm");requireText(boot,glyphs,L"100%",-1,45);requireAsset(boot,7*256+34,5,59);boot.tick(7499);assert(boot.updating());boot.tick(7500);assert(!boot.updating());boot.input(Key::Select);assert(boot.page()==Page::Music);}
     {Fake b;Interface emptyRadio(b,root/"Music");emptyRadio.tick(100);emptyRadio.skipBoot();emptyRadio.input(Key::Up);assert(emptyRadio.selection()==5);emptyRadio.input(Key::Select);assert(emptyRadio.page()==Page::Radio);emptyRadio.tick(1000);assert(b.plays==0);emptyRadio.input(Key::Back);assert(emptyRadio.page()==Page::Home&&emptyRadio.selection()==5);emptyRadio.input(Key::Down);assert(emptyRadio.selection()==0);}

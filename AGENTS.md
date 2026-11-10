@@ -397,3 +397,11 @@ wide-character locale. Exact spelling breaks otherwise equal comparisons, so
 distinct metadata groups remain reachable. Saved playlist order is preserved.
 This is the owner's desktop preference, not a newly recovered firmware rule.
 Native sorting checks also exercise folder Back restoration and queue order.
+
+Returning to the large-icon Home page through Back, the Home shortcut or explicit
+navigation requests the existing background library scan and immediately clears
+the folder cache. `refreshOnHome` runs only on entry from another page, not home
+redraws/navigation or an ignored locked/wake key. The current playback queue is
+preserved. Native tests cover repeated returns, a newly created file before scan
+completion, refreshed library delivery and playback continuity. This is another
+desktop preference, not a firmware claim; startup retains its existing scan.

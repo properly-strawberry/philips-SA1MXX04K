@@ -117,6 +117,7 @@ private:
     std::vector<fs::path> filteredSongs(int mode,const std::wstring& group=L"");
     void select();
     void back();
+    void refreshOnHome(Page previous);
     void move(int delta);
     void playQueue(std::vector<fs::path> paths,int index);
     void next(int direction,bool automatic=false);

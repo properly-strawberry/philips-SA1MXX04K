@@ -78,14 +78,21 @@ void Interface::setLibrary(std::vector<Song> songs) {
     int count=frame_.page==Page::Home?int(homeFamilies.size()):int(items().size());frame_.selected=std::clamp(frame_.selected,0,std::max(0,count-1));frame_.scroll=std::min(frame_.scroll,frame_.selected);
 }
 void Interface::navigate(Page page) {
+    auto previous=frame_.page;
     transportDirection_=0;
     if(frame_.page==Page::VolumeLimit&&limitDraft_>=0){backend_.volume(volumeBeforeLimit_);limitDraft_=-1;}
     if(page==Page::Playing){metadataStarted_=false;titleStarted_=false;}
     if(page==Page::VolumeLimit){volumeBeforeLimit_=settings.volume;limitDraft_=settings.volume;volumeUntil_=0;}
     auto directory=frame_.directory;history_.push_back(frame_);frame_={page,0,0,L"",0,directory};selectedAt_=now_;
     auto rows=items();for(size_t i=0;i<rows.size();i++)if(rows[i].checked){frame_.selected=int(i);break;}
+    refreshOnHome(previous);
+}
+void Interface::refreshOnHome(Page previous) {
+    if(previous==Page::Home||frame_.page!=Page::Home)return;
+    cachedDirectory_.clear();scanning=true;backend_.rescan();
 }
 void Interface::back() {
+    auto previous=frame_.page;
     if(frame_.page==Page::VolumeLimit&&limitDraft_>=0){backend_.volume(volumeBeforeLimit_);limitDraft_=-1;}
     if(frame_.page==Page::Recording && backend_.recording().active) {
         backend_.recordPause(true);confirm(tr(90)+L"\n\""+backend_.recording().path.filename().wstring()+L"\"",[this]{backend_.recordFinish(true);backend_.rescan();auto error=backend_.recording().error;notice(error.empty()?tr(91):error);});return;
@@ -94,7 +101,7 @@ void Interface::back() {
         backend_.recordFinish(false);
         if(!history_.empty()){frame_=history_.back();history_.pop_back();}
         if(frame_.page==Page::Recording&&!history_.empty()){frame_=history_.back();history_.pop_back();}
-        selectedAt_=now_;return;
+        selectedAt_=now_;refreshOnHome(previous);return;
     }
     if(frame_.page==Page::Folders&&frame_.directory!=music_) {
         auto old=frame_.directory;frame_.directory=old.parent_path();frame_.selected=frame_.scroll=0;
@@ -104,6 +111,7 @@ void Interface::back() {
     if(history_.empty())frame_.page=Page::Home;
     else {frame_=history_.back();history_.pop_back();}
     selectedAt_=now_;
+    refreshOnHome(previous);
 }
 void Interface::notice(std::wstring value,int milliseconds) { notice_=std::move(value);noticeUntil_=now_+milliseconds;volumeUntil_=0; }
 void Interface::confirm(std::wstring value,std::function<void()> yes,bool restore) {
@@ -372,7 +380,7 @@ void Interface::input(Key key) {
     if(key==Key::VolumeUp||key==Key::VolumeDown){int delta=key==Key::VolumeUp?1:-1;if(frame_.page==Page::VolumeLimit)adjustLimit(delta);else volume(delta);return;}
     if(frame_.page==Page::VolumeLimit&&(key==Key::Home||key==Key::Menu)){back();if(key==Key::Menu)return;}
     if(frame_.page==Page::CustomEQ&&key==Key::Back){if(frame_.selected>0)frame_.selected--;else back();return;}
-    if(key==Key::Home){if(frame_.page==Page::Recording){back();return;}if(frame_.page==Page::Confirm&&backend_.recording().active)back();history_.clear();frame_.page=Page::Home;frame_.selected=frame_.scroll=0;selectedAt_=now_;return;}
+    if(key==Key::Home){if(frame_.page==Page::Recording){back();return;}if(frame_.page==Page::Confirm&&backend_.recording().active)back();auto previous=frame_.page;history_.clear();frame_.page=Page::Home;frame_.selected=frame_.scroll=0;selectedAt_=now_;refreshOnHome(previous);return;}
     if(key==Key::Back){back();return;}
     if(frame_.page==Page::Confirm){if(key==Key::Select)select();return;}
     if(key==Key::Menu){openOptions();return;}
