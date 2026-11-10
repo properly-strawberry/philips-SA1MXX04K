@@ -30,3 +30,29 @@
 0x19707c	ui_format_clock	Observed hour omission and padded minutes/seconds	F
 0x15876c	ui_shutdown_create	Observed centered Bye text and initial timer count 50	F
 0x15863e	ui_shutdown_animation_tick	Observed group-8 frames 0..6 at 15,9; interval count 25; completion event	F
+0x1597cc	ui_metadata_scroll_tick	Observed horizontal pass and clipped vertical artist/album slide	F
+0x159ada	ui_metadata_create	Observed 14-pixel metadata viewport and paired rows	F
+0x14ce9e	ui_root_create_updating	Observed split root body; assembly establishes spinner/text/progress positions	F
+0x14d106	ui_root_update_progress	Observed progress phase label and original strip frame selection	F
+0x196978	widget_create_spinner	Observed group-5 spinner child construction	F
+0x15bd10	ui_spinner_tick	Observed spinner frame advancement	F
+0x15a078	ui_volume_paint	Observed 0..31 group-4 volume bars/thumb/cap and plus-minus positions	F
+0x15a1c0	ui_volume_event	Observed volume/limit input handling	F
+0x15a19a	ui_volume_tick	Observed volume popup countdown	F
+0x15a5e8	ui_volume_create	Observed volume widget initialization	F
+0x15423c	ui_custom_eq_event	Observed two-unit gain changes and Select/Back band traversal	F
+0x15441a	ui_custom_eq_paint	Observed group-6 background/column/bars/thumb geometry	F
+0x15802a	ui_dialog_create	Observed kind-2 lock/open sprite at 52,11; timer count 4	F
+0x157be0	ui_dialog_paint	Observed full-bounds palette background fill	F
+0x157c10	ui_dialog_tick	Observed count decrement then dismissal event	F
+0x157c36	ui_dialog_event	Observed closed/open sprite updates and lock dialog key forwarding	F
+0x159d3c	ui_title_scroll_tick	Observed single full title pass, prefix/ellipsis restoration and metadata-enable flag	F
+0x159ede	ui_title_create	Observed 118-pixel title child and hidden theme ellipsis	F
+0x159e28	ui_title_reset	Observed glyph-boundary prefix <=106 pixels and restart	F
+0x157de8	ui_dialog_layout	Observed prompt-row and fixed Play/OK Back/Cancel footer geometry	F
+0x158240	ui_factory_reset_event	Observed reset strings, Restore caption and confirmation result	F
+0x15b3e0	ui_playlist_confirm_create	Observed Add/Remove prompts with quoted title and language-specific rows	F
+0x15af5e	ui_playlist_confirm_event	Observed commit/cancel playlist changes and return route	F
+0x150904	ui_menu_preselect	Observed menu eligibility checks including current-queue requirement for playlist Add	F
+0x14edf6	ui_static_menu_event	Observed menu navigation and select/back dispatch	F
+0x157288	ui_recording_finish	Observed cancellation flag and pending recording cleanup	F

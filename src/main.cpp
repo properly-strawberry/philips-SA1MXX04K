@@ -12,6 +12,7 @@
 #include <shlwapi.h>
 #include "audio.h"
 #include "interface.h"
+#include "controls.h"
 #include "recorder.h"
 #include <algorithm>
 #include <filesystem>
@@ -84,9 +85,7 @@ void beginScan() {
     });
 }
 void control(int button) {
-    static constexpr Key keys[]={Key::Back,Key::Previous,Key::Select,Key::Next,Key::Menu,Key::VolumeDown,Key::VolumeUp};
-    if((button==1||button==3)&&ui->page()==Page::Playing)ui->pressTransport(button==1?-1:1);
-    else if(button>=0&&button<7)ui->input(keys[button]);
+    if(button>=0)player::pressBodyButton(*ui,player::BodyButton(button));
 }
 void renderScreen(){ui->render();screen=ui->screen;}
 std::wstring trackTitle(const TrackInfo&){return ui->currentTitle();}
@@ -101,23 +100,24 @@ void label(Graphics& g,float x,float y,float w,float h,const wchar_t* value,floa
 }
 struct Button { int x,y,w,h; const wchar_t* hint; };
 const Button buttons[]={
-    {710,79,64,44,L"Back"},{654,139,50,68,L"Previous / up"},{706,139,72,68,L"Play / select"},
-    {780,139,50,68,L"Next / down"},{710,222,64,44,L"Options / hold to lock"},
+    {710,79,64,44,L"Up / previous / hold to seek"},{654,139,50,68,L"Back"},{75,29,78,21,L"Lock / unlock"},
+    {780,139,50,68,L"Play / pause / select"},{710,222,64,44,L"Down / next / hold to seek"},
     {647,29,55,21,L"Volume down"},{707,29,55,21,L"Volume up"}
 };
-int buttonAt(float x,float y) { for(int i=0;i<7;i++){auto b=buttons[i];if(x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h)return i;}return -1; }
+static_assert(std::size(buttons)==player::bodyButtonCount);
+int buttonAt(float x,float y) { for(size_t i=0;i<std::size(buttons);i++){auto b=buttons[i];if(x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h)return int(i);}return -1; }
 void drawButton(Graphics& g,int index) {
     auto b=buttons[index];auto path=rounded(float(b.x),float(b.y),float(b.w),float(b.h),8);
     LinearGradientBrush fill(Point(b.x,b.y),Point(b.x,b.y+b.h),pressed==index?Color(255,62,68,75):Color(255,31,34,39),Color(255,8,9,12));
     g.FillPath(&fill,path.get());Pen outline(Color(255,67,70,76),1);g.DrawPath(&outline,path.get());
     Color c=pressed==index?Color(255,113,230,250):Color(255,160,170,178);SolidBrush brush(c);Pen pen(c,2.4f);
     float cx=b.x+b.w/2.0f,cy=b.y+b.h/2.0f;
-    if(index==0) { g.DrawLine(&pen,cx+8,cy+3,cx-7,cy+3);g.DrawLine(&pen,cx-7,cy+3,cx-7,cy-6);g.DrawLine(&pen,cx-7,cy-6,cx-12,cy-1);g.DrawLine(&pen,cx-7,cy-6,cx-2,cy-1); }
-    if(index==1||index==3) {
-        int d=index==1?-1:1;PointF points[]={{cx+d*5,cy},{cx-d*5,cy-7},{cx-d*5,cy+7}};g.FillPolygon(&brush,points,3);
+    if(index==1) { g.DrawLine(&pen,cx+8,cy+7,cx+8,cy-3);g.DrawLine(&pen,cx+8,cy-3,cx-9,cy-3);g.DrawLine(&pen,cx-9,cy-3,cx-3,cy-9);g.DrawLine(&pen,cx-9,cy-3,cx-3,cy+3); }
+    if(index==0||index==4) {
+        int d=index==0?-1:1;PointF points[]={{cx,cy+d*7},{cx-7,cy-d*5},{cx+7,cy-d*5}};g.FillPolygon(&brush,points,3);
     }
-    if(index==2) { PointF p[]={{cx-9,cy-8},{cx+3,cy},{cx-9,cy+8}};g.FillPolygon(&brush,p,3);g.FillRectangle(&brush,cx+6,cy-7,2.0f,14.0f);g.FillRectangle(&brush,cx+11,cy-7,2.0f,14.0f); }
-    if(index==4) { for(int j=-1;j<=1;j++)g.DrawLine(&pen,cx-7,cy+j*5,cx+7,cy+j*5); }
+    if(index==3) { PointF p[]={{cx-9,cy-8},{cx+3,cy},{cx-9,cy+8}};g.FillPolygon(&brush,p,3);g.FillRectangle(&brush,cx+6,cy-7,2.0f,14.0f);g.FillRectangle(&brush,cx+11,cy-7,2.0f,14.0f); }
+    if(index==2) {g.DrawLine(&pen,float(b.x+10),cy,float(b.x+b.w-10),cy);g.FillEllipse(&brush,float(ui->locked?b.x+b.w-21:b.x+9),cy-6,12.0f,12.0f);}
     if(index==5||index==6) {g.DrawLine(&pen,cx-6,cy,cx+6,cy);if(index==6)g.DrawLine(&pen,cx,cy-6,cx,cy+6);}
 }
 void paint(HDC dc,int width,int height) {
@@ -143,13 +143,13 @@ void paint(HDC dc,int width,int height) {
     g.SetInterpolationMode(InterpolationModeNearestNeighbor);g.SetPixelOffsetMode(PixelOffsetModeHalf);
     g.DrawImage(&bitmap,Rect(210,83,384,192),0,0,128,64,UnitPixel);
     g.SetPixelOffsetMode(PixelOffsetModeDefault);
-    for(int i=0;i<7;i++)drawButton(g,i);
+    for(size_t i=0;i<std::size(buttons);i++)drawButton(g,int(i));
     auto info=audio->snapshot();
     std::wstring status=info.playing?(info.paused?L"Paused":L"Playing"):L"Music lives beside philips.exe";
     if(!info.error.empty())status=info.error;
     else if(info.playing)status+=L"  ·  "+trackTitle(info);
     label(g,40,337,840,19,status.c_str(),12,Color(255,170,183,197));
-    label(g,40,357,840,17,L"Arrows: browse / tune   ·   Enter: select   ·   M: options   ·   Home: main menu   ·   + / −: volume",11,Color(255,111,126,143));
+    label(g,40,357,840,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume",11,Color(255,111,126,143));
 }
 void saveScreenshot(const std::wstring& path) {
     Bitmap bitmap(W,H,PixelFormat32bppARGB);Graphics graphics(&bitmap);
@@ -240,12 +240,14 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     }
     case WM_KEYDOWN:
         if(closing)return 0;
+        if(ui->page()==Page::Confirm&&(wp=='S'||wp=='R'||wp==VK_F5||wp==VK_F9||wp==VK_F10))return 0;
+        if((lp&(1LL<<30))&&(wp==VK_RIGHT||wp==VK_RETURN||wp==VK_SPACE||wp=='L'))return 0;
         if(wp==VK_ESCAPE||wp==VK_BACK)ui->input(Key::Back);
         else if(wp==VK_HOME)ui->input(Key::Home);
         else if(wp==VK_RETURN||wp==VK_SPACE)ui->input(Key::Select);
-        else if(wp==VK_UP)ui->input(Key::Up);
-        else if(wp==VK_DOWN)ui->input(Key::Down);
-        else if(wp==VK_LEFT||wp==VK_RIGHT){if(GetKeyState(VK_SHIFT)&0x8000)ui->input(wp==VK_LEFT?Key::SeekBack:Key::SeekForward);else if(ui->page()==Page::Playing)ui->pressTransport(wp==VK_LEFT?-1:1);else ui->input(wp==VK_LEFT?Key::Previous:Key::Next);}
+        else if(wp==VK_UP||wp==VK_DOWN){if(GetKeyState(VK_SHIFT)&0x8000)ui->input(wp==VK_UP?Key::SeekBack:Key::SeekForward);else control(wp==VK_UP?0:4);}
+        else if(wp==VK_LEFT)ui->input(Key::Back);
+        else if(wp==VK_RIGHT)ui->input(Key::Select);
         else if(wp==VK_ADD||wp==VK_OEM_PLUS)ui->input(Key::VolumeUp);
         else if(wp==VK_SUBTRACT||wp==VK_OEM_MINUS)ui->input(Key::VolumeDown);
         else if(wp=='M'||wp==VK_APPS)ui->input(Key::Menu);
@@ -255,19 +257,19 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         else if(wp==VK_F5){ui->loadStations(layoutDir/L"Playlists"/L"radio.json");beginScan();}
         else if((wp==VK_F9||wp==VK_F10)&&!ui->locked&&!ui->booting()&&!ui->updating()){ui->input(Key::Home);ui->navigate(wp==VK_F9?Page::USBConnected:Page::USB);}
         return 0;
-    case WM_KEYUP:if(wp==VK_LEFT||wp==VK_RIGHT)ui->releaseTransport();return 0;
+    case WM_KEYUP:if(wp==VK_UP||wp==VK_DOWN)ui->releaseTransport();return 0;
     case WM_KILLFOCUS:ui->cancelTransport();return 0;
-    case WM_MOUSEWHEEL:ui->input(GET_WHEEL_DELTA_WPARAM(wp)>0?Key::Up:Key::Down);return 0;
+    case WM_MOUSEWHEEL:{bool playback=ui->page()==Page::Playing||ui->page()==Page::Radio;ui->input(GET_WHEEL_DELTA_WPARAM(wp)>0?(playback?Key::VolumeUp:Key::Up):(playback?Key::VolumeDown:Key::Down));return 0;}
     case WM_LBUTTONDOWN: {
         if(closing)return 0;
         RECT r;GetClientRect(hwnd,&r);float scale=std::min(float(r.right)/W,float(r.bottom)/H);
         float x=(GET_X_LPARAM(lp)-(r.right-W*scale)/2)/scale,y=(GET_Y_LPARAM(lp)-(r.bottom-H*scale)/2)/scale;
         pressed=buttonAt(x,y);pressedAt=GetTickCount64();SetCapture(hwnd);
-        if(pressed>=0&&pressed!=4)control(pressed);
+        if(pressed>=0)control(pressed);
         else if(pressed<0&&x>=210&&x<594&&y>=83&&y<275)ui->click(int((x-210)/3),int((y-83)/3));
         return 0;
     }
-    case WM_LBUTTONUP:if(pressed==1||pressed==3)ui->releaseTransport();if(pressed==4){if(GetTickCount64()-pressedAt>=600)ui->input(Key::Lock);else control(4);}pressed=-1;ReleaseCapture();return 0;
+    case WM_LBUTTONUP:if(pressed>=0)player::releaseBodyButton(*ui,player::BodyButton(pressed));pressed=-1;ReleaseCapture();return 0;
     case WM_CAPTURECHANGED:ui->cancelTransport();pressed=-1;return 0;
     case WM_ERASEBKGND:return 1;
     case WM_PAINT:{PAINTSTRUCT p;HDC dc=BeginPaint(hwnd,&p);RECT r;GetClientRect(hwnd,&r);HDC mem=CreateCompatibleDC(dc);HBITMAP bitmap=CreateCompatibleBitmap(dc,std::max(1L,r.right),std::max(1L,r.bottom));auto old=SelectObject(mem,bitmap);paint(mem,r.right,r.bottom);BitBlt(dc,0,0,r.right,r.bottom,mem,0,0,SRCCOPY);SelectObject(mem,old);DeleteObject(bitmap);DeleteDC(mem);EndPaint(hwnd,&p);return 0;}

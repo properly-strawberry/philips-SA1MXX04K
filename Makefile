@@ -21,7 +21,7 @@ gen/player/resources.o: src/player.rc ref/DEVICON.FIL
 	x86_64-w64-mingw32-windres -i src/player.rc -o $@
 
 SOURCES := src/main.cpp src/audio.cpp src/interface.cpp src/radio_config.cpp src/recorder.cpp
-HEADERS := src/audio.h src/interface.h src/radio_config.h src/recorder.h src/equalizer.h src/unicode.h
+HEADERS := src/audio.h src/interface.h src/radio_config.h src/recorder.h src/equalizer.h src/unicode.h src/controls.h
 
 gen/player/philips.exe: $(SOURCES) $(HEADERS) gen/player/assets.h gen/player/resources.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SOURCES) gen/player/resources.o $(LDFLAGS) $(LDLIBS) -o $@

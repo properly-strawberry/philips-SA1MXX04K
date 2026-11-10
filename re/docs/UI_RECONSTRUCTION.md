@@ -1,4 +1,4 @@
-# Desktop UI reconstruction and remaining USB screen investigation
+# Desktop UI reconstruction
 
 2026-11-10. The desktop controller adapts recovered resources to FFmpeg, Windows
 audio/microphone I/O and filesystem folders. It is not firmware emulation.
@@ -25,7 +25,7 @@ dimension. There is no overlooked large monochrome PC-screen bitmap in that set.
 - Groups 4/5: small controls and waiting-animation elements.
 - Group 6: EQ background and slider graphics.
 - Group 7: startup animation, registration screen, hourglass and progress segments.
-- Group 8: waiting animation.
+- Group 8: shutdown expanding-dot animation.
 - Group 9: 24 pairs of localized charge/transfer versus charge/play selections.
 - Group 10: 24 UI text tables; the English table has 235 indexed text entries.
 - Groups 33/34: default 12/14-pixel fonts selected by recovered initialization.
@@ -63,9 +63,12 @@ See FIRMWARE_UI.md for addresses, evidence and exact values. At the owner's
 request, internet radio is the hidden sixth home item after Now/Last Played,
 always reachable even with an empty table. The original five-dot rail stays;
 no bubble is highlighted for Radio. Native input/services, some screen layouts, EQ coefficients,
-capacity reporting and I/O remain desktop adaptations. Requested timing changes
+capacity reporting and I/O remain desktop adaptations. The detailed current
+audit is in UI_FIDELITY_AUDIT.md. Requested timing changes
 are 170 ms boot frames and three seconds of Updating… with centered text,
-0-100% beneath it and a bottom progress strip. Track counters pad to four digits.
+0-100% beneath it and the original bottom progress-strip frames. The original
+group-5 spinner is restored at (57,8); text glyphs start at y30/y45 and the
+strip at y59. Track counters pad to four digits.
 Shutdown uses original group-8 expanding dots after Bye, 4.5 seconds total at
 the requested slower pace. The window waits for the sequence to finish.
 
@@ -114,3 +117,39 @@ without a space. It is prerendered. tools/extract_host_ui.py exports all 48;
 F9 now renders this screen using actual pixels and recovered coordinates.
 F10 retains the charge-choice preview. See FIRMWARE_UI.md for the host functions
 and evidence. Neither hidden 0x0b nor boot ROM is needed for this graphic.
+
+## Subsequent refinements
+
+`ui-refinements-dossiers.json` records volume, Updating/spinner and Custom EQ
+code; `lock-dossiers.json` records full-screen closed/open feedback and timer
+behavior. Metadata now slides in a clipped 14-pixel area with a horizontal pass
+for long labels. The volume widget uses actual group-4 sprites and a 0..31 UI
+scale. Limit edits support preview/commit/cancel. Custom EQ uses recovered
+column/bar/thumb painting and Select/Back band traversal.
+
+Lock feedback clears the full screen and uses group 3.15..17 (closed) or
+3.18..20 (open) at (52,11). It times out to the previous page, retaining the
+control lock; a blocked keypress shows it again. Its 1250-ms desktop duration
+is not a proven firmware wall-clock duration. The photo establishes the four
+face-button arrangement; the requested separate top slider only locks/unlocks.
+The full list of remaining approximations is in UI_FIDELITY_AUDIT.md.
+
+## Title and modal-flow follow-up
+
+Title scrolling now follows 0x159d3c/0x159ede/0x159e28: initial clipped text,
+ten-update hold, one full pass, then a stopped glyph-boundary prefix with the
+original ellipsis. Metadata waits for title completion. Cadence is interpreted
+as 100 ms per update, not established hardware timing.
+
+Music > Playlists has the actual three entries from menu state 0x12, including
+Add of the current queued track and a removal browser. The M menu is retained
+as a desktop shortcut for the current track, with the applicable playlist action;
+there is no claim of an original combined Options menu. Its orphaned Add bookmark
+entry is removed. Radio options follow the actual Presets/Manual/Auto order.
+
+Confirmations now use centered text rows and fixed Play/OK and Back/Cancel
+captions. They have no Yes/No cursor. Recording includes its quoted filename;
+reset has the original Restore caption. Cancel preserves files/settings, or
+discards only the pending recording as requested by that recording dialog.
+Native tests exercise actual actions and pixel placements, including a disposable
+file's delete/cancel sequence. Code/evidence: ui-flow-dossiers.json.

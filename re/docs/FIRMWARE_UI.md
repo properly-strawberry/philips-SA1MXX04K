@@ -207,15 +207,16 @@ Progress backgrounds are ABGR ff2d2d2d/ffa87455/ffa390e9. Time/counter text is
 white even on Pink. Clock formatter 0x19707c omits hours when zero and otherwise
 includes them. Firmware title scrolling is a separate state machine, and the
 artist/album row scrolls between child text widgets. The desktop approximates
-that cadence with a three-second artist/album switch and horizontal marquees.
+that cadence with clipped artist/album sliding and horizontal metadata passes;
+title coordination now follows its completion flag (see the follow-up below).
 
 Observed seek handler 0x153296 increases its parameter to 4,5,10,20 at repeat
 counts 1,10,20,40. Event handler 0x1532e6 distinguishes tap, hold/repeat and
 release events (0x601/604/610, 0x701/704/710, 0x608/708, 0x804/808/810).
 Original physical repeat timing and parameter-to-time conversion are not yet
-fully traced. Desktop adaptation: release a short Left/Right or shell press to
+fully traced. Desktop adaptation: release a short Up/Down or upper/lower shell press to
 change track; after 450 ms, seek every 250 ms using those step sizes in seconds.
-Shift+Left/Right remains a five-second seek, and clicking the progress bar maps
+Shift+Up/Down remains a five-second seek, and clicking the progress bar maps
 to the track duration. Seeking clamps to the file and works while paused.
 
 Recording constructor 0x156e66 uses a filename at (5,13), 118x14; elapsed time
@@ -264,10 +265,169 @@ Evidence: `ev_5de526df939487756eb8a2b7f050b2cc28d765151d78d33dfcd6c475280f2725`,
 `ev_6aef8fb6d24255da5b404333997c9add4ee7b606cce53e4ced3f6ed60aee7e0f`.
 Code and identity are retained in shutdown-dossiers.json.
 
+## Metadata, volume, Updating and Custom EQ refinements
+
+Observed metadata constructor 0x159ada and tick 0x1597cc create a 14-pixel
+viewport and two text/icon rows. The outgoing and incoming rows move upward
+one pixel per timer update; long metadata makes a horizontal pass before the
+vertical change. Original tick processing waits for title-scroll completion.
+Desktop now reproduces the clipped two-row motion and metadata sequencing,
+with 100-ms steps. The later title/modal-flow pass below replaces the previous
+independent looping title marquee and restores title-completion gating.
+Evidence: `ev_99bbda92dd3ce31518880fa1f5ec55330414842783831ab72a6cca8ef2825b81`,
+`ev_d6d4384906a9a01420fbe0796793f9dbf76c790b42b77e2494b1860f78ba40b8`.
+
+Volume paint 0x15a078 uses group 4: active bar 0, inactive bar 1+theme at
+(17+3*i,26); thumb 4 at (14+3*position,21); cap 8 at (17+3*limit,21);
+minus 6 at (1,26), plus/blocked-plus 7/5 at (115,26). The UI range is 0..31.
+Desktop retains percentage settings for compatibility and maps them to these
+32 positions. Limit editing previews audio changes, Select commits, Back
+cancels. Popup expiry remains a 1400-ms desktop choice.
+Evidence: paint `ev_1584f6ed759d08f3be393792e24cbaf1f496d79fa35aa837abb92b357c8e32e1`,
+event `ev_1cf87bc7b0ae051c40ab90f0e2e8299b0979fd7ead47d584b96af565ffa647f9`,
+constructor `ev_46d2ffcc162c61ca0519c340144f8bc411c884e16e21aebe4615db386f1ad6e8`.
+
+Recheck of root dispatcher split 0x14ce9e supersedes the earlier guessed
+Updating layout. Assembly resolves stack arguments that the split-function
+pseudocode leaves unaffiliated: spinner rectangle (57,8,16,16), original label
+0xe5 in (5,29,118,14), percent in (0,44,128,14), and strip (5,59,118,2).
+With default 12-pixel font 33, glyphs are centered at y30/y45. Spinner
+constructor 0x196978 and tick 0x15bd10 use group 5 frames 0..7 with period
+argument 0x5a. Desktop interprets this as 90 ms; the actual tick unit is not
+proven. The requested synthetic scan lasts three seconds. Dispatch 0x14d106
+uses whole group-7 strip frames 24..34, initially white with gray advancing
+left to right; labels stay zero for phases 0/1, become 20..80 for 2..8, remain
+80 at phase 9, and reach 100 at phase 10. Library scanning also uses group 5,
+without a fabricated percentage. Group 8 is the shutdown animation.
+Evidence: `ev_d9bbfc07dfa6d73e1cee562ea19acc227d2ac1baa6dcb0e87b96ebcf07c24abc`,
+`ev_64334e77f0530c447eddd8b333211b250b5e644608767499e54dac24638bdd9f`,
+`ev_980b7a28ea7f50830fbb68670e1894bd57ea9bbbc060d96c3651ebecdd672d9e`,
+`ev_655a43170f2c5f314915aa1531df0d505c9b38535931c0ea66926f9f61d4f574`.
+
+Custom EQ event 0x15423c changes gains in units of two, bounded to +/-10;
+Select advances through five bands and exits, Back goes to the previous band
+or exits from band zero. Paint 0x15441a uses background 6.theme, selected
+column 6.(4+theme) at (12+22*band,0), unit bars 6.3 at
+(15+22*i,27-sign*k*4), and thumb 6.7 at
+(12+22*band,25-(gain/2)*4). Desktop now follows those graphics/controls.
+Original DSP units/coefficients remain unknown; desktop interprets gains as dB.
+Evidence: `ev_795f71deaae77c82692f723a7eb6a5bfe2475231b0e3dd4f6fea580238885cb7`,
+`ev_3645b9079663c7f038bf8df78aa66b575e73ec9773650c9b14ed6d23210d9722`.
+Code and identity: ui-refinements-dossiers.json; metadata code is also retained
+in playback-recording-dossiers.json.
+
+## Lock/unlock feedback
+
+Observed root event handler 0x14c588 creates dialog class 0x1020 over
+(0,0,128,64), with timer period 25 and kind 2. Constructor 0x15802a reads
+lock-state bit 4 and creates a 24x37 image at (52,11), using closed resources
+3.15..17 or open 3.18..20 depending on theme. Painter 0x157be0 fills the
+entire dialog bounds with the palette background. There is no text label and
+no separate moving padlock frame sequence in these callbacks. The existing
+narrow overlay and Hold MENU caption were desktop inventions and are removed.
+
+Timer 0x157c10 starts from count 4, decrements on four callbacks and posts
+its dismissal event on the fifth. Event handler 0x157c36 dismisses on event
+0x367, updates the closed/open bitmap on 0x804/0x828 and routes blocked keys.
+Root dispatch clears/sets the lock flag and can re-create the dialog. Derived
+behavior: temporarily replace the whole display, then restore the underlying
+page without unlocking controls. A blocked key can show the closed padlock
+again. The desktop follows that flow, uses the open bitmap on unlock, cancels
+pending transport holds and clears stale volume/notices. Its 1250-ms duration
+interprets 125 firmware timer units as 10 ms each; that unit is unproven.
+
+Native lock tests compare all 8192 pixels with a clean background plus the
+original sprite in all three themes, check both states, expiry restoration,
+blocked volume/click retrigger, transport cancellation, next-input dismissal
+and rotated output. Windows shell execution remains unverified here.
+
+Evidence: constructor
+`ev_eda39f490b78e6ffe4d4ecc444a51291b4dca1ed54f31aaaaa396cc8ade64eba`,
+paint `ev_5f04a62e4f07545a96bc989092bc97c4a83a0fab16bc5a173a660868cb9cc019`,
+timer `ev_629b94dea149e94115add7a491465d2fdffd622231a1553a01fa1c27a4a1c06d`,
+event `ev_63befebf663af1dcb1cd7ffa2e71f6b8a47a959c4dc40ecadaa91c818db0233a`.
+Code/assembly and binary identity are retained in lock-dossiers.json; root
+code is in ui-function-dossiers.json. REA session closed normally.
+
+## Title, playlist and confirmation follow-up
+
+Observed title constructor 0x159ede creates a 118x14 text child and a hidden
+12x14 theme ellipsis image. Reset 0x159e28 restores the initial width/x and
+hides that image. For text wider than 118 pixels, it computes a glyph-boundary
+prefix of at most 106 pixels and clears the metadata-enable global. Tick
+0x159d3c holds ten callbacks, then decrements the text x position one pixel
+per callback until x+text width is negative. It resets x to zero, changes text
+width to the saved prefix, unhides the ellipsis and sets the metadata-enable
+global. Thus it starts with clipped text, makes one complete pass, then stops
+on prefix+ellipsis. The desktop now follows this state order and gates metadata
+until completion; new titles and fresh playback-page entry restart it.
+Its 100-ms update interval is still a desktop interpretation.
+
+Evidence: reset `ev_d39cc3bba82295844514d9f8e5b1a6ec89dad326a5aeb94d4c6031b677ddfcfb`;
+constructor/tick and metadata code remain in playback-recording-dossiers.json.
+The reset dossier is also preserved in ui-flow-dossiers.json.
+
+Observed menu builder 0x150264 state 0x12 contains one-based IDs
+0x1f/0x20/0x21: Playlist-on-the-Go, Add To Playlist, Remove From Playlist.
+Preselection handler 0x150904 requires the current playback queue for Add.
+The state-0x12 branch at 0x14f8c8, outside Ghidra's recovered function body,
+sets playlist mode and sends state 0x1f for Add or 0x23 for its browser.
+Bytes and explicit Thumb decoding are preserved in menu-branch-static-check.json
+(`philips-menu-branch-static-check`); this branch check is not a runtime trace.
+Root 0x14d4b8 creates class 0x1029 for add/remove. Constructor 0x15b3e0
+builds its actual confirmation; event 0x15af5e performs the change on
+Select and returns to the playlist menu/browser. The desktop now has this
+original three-entry menu and remove-song route. Add uses the current queued
+track, not the row selected in an unrelated browser.
+
+The combined M/Options screen is a desktop shortcut: no matching combined
+menu was found in the recovered static tables. It is now restricted to a
+current queued track on the playback page, exposes Play Mode, Sound, the
+applicable Add or Remove action and Delete, and omits orphaned bookmark
+creation. That eligibility/order is a desktop choice, not a recovered physical
+Options sequence. The original audiobook feature gate remains unresolved.
+Radio options use observed state-1 table order Presets/Manual tune/Auto tune;
+the optional recording entry is omitted for the internet adapter.
+
+Generic dialog layout 0x157de8 puts one/two/three prompt rows at y17,
+y6/y28, or y1/y17/y33 for confirmation kind 1. Its footer is y49, height 14:
+left (2,49,83,14), right (86,49,40,14), or 60-pixel widgets starting at x2/x66
+for language IDs 18/19/20/23. Text IDs are 201/202 (Play OK / Back Cancel),
+with left/right alignment and white text. There is no selectable Yes/No list.
+Factory handler 0x158240 sets the two original reset strings and substitutes
+text 203 (Restore) in the left footer. Recording handler 0x157532 explicitly
+uses Save recording? at y6 and a quoted filename at y28. Its cancellation
+sets flag +0x45; cleanup 0x157288 then calls 0x163276 on the pending object.
+The desktop maps that to discarding only the pending WAV, while Play saves it.
+
+Playlist constructor 0x15b3e0 uses Add/Remove, quoted track name and
+"to/from playlist?". English rows are y1/y17/y33. Language branches move
+those rows as recorded in its code; the desktop ports those branches. Long
+rows currently use the desktop generic marquee; their native cadence and all
+regional multiline behavior are not verified. Success/error notice lifetimes
+and specialized layouts also remain incomplete. Generic notices now clear the
+whole display and omit the invented checkmark.
+
+Evidence: menu eligibility `ev_799cbd860b1f8db86e54a8116d2cd7b9ba4afef14953a3fd6a3db607fa849b7c`,
+playlist constructor `ev_904742674a8b277c84405413733db1487ce1ecb75caf0c21df50acbf42c2cc83`,
+playlist event `ev_7e943f399b4de6d496c6086177b628b56e8042a2b856b579091db3050eb9dc63`,
+layout `ev_f0ee4bc0fe0095e1bf9995ad9592d11e82d8c4c2752ffe4bcca7ee6e493db98b`,
+factory reset `ev_1bf99b548c2992ae4edcd81cb64cfd4b0b322183592653d826204f224f0897b8`,
+recording cleanup `ev_f93a69f8e47a2ed66bfe9021d59fed15b813204e7ebbe5fa38b7edaf097ad077`.
+Saved code: ui-flow-dossiers.json, lock-dossiers.json and earlier playback dossiers.
+
+Validation: native tests verify title hold/pass/ellipsis/stop/reset and delayed
+metadata in all three themes, prompt/footer pixels, no action on navigation or
+prompt clicks, playlist commit/cancel and original routes, recording save/
+discard, factory reset/cancel and a disposable file guarded by confirmation.
+They do not compare a physical runtime or verify Windows hardware services.
+REA session closed normally after preserving the compact dossiers.
+
 ## Saved evidence and remaining limits
 
 ui-function-dossiers.json, ui-drawing-dossiers.json and host-ui-dossiers.json
-and playback-recording-dossiers.json retain Ghidra pseudocode/assembly and
+and playback-recording-dossiers.json, ui-refinements-dossiers.json and
+lock-dossiers.json and ui-flow-dossiers.json retain Ghidra pseudocode/assembly and
 evidence identity. These are decompiler
 outputs, not original source or guaranteed compilable C. ui-deep-analysis.rea.json
 retains the earlier play-mode query bundle. REA's atomic export hit a staging

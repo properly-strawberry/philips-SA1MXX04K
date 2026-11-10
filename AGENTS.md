@@ -198,8 +198,9 @@ earlier simple five-view interface description above.
   DSP checks. Generated native screens: `gen/ui-tests/fixture/*.ppm`.
 - Boot frames last 170 ms, followed by Updating… for three seconds. Shutdown
   holds Bye for 1 second, then plays original expanding-dot frames 8.0..8.6
-  at (15,9), 500 ms each (4.5 seconds total). M opens options; hold the lower shell button or
-  press L for lock. F9 previews the actual USB screen; F10 the charge choices.
+  at (15,9), 500 ms each (4.5 seconds total). M opens options. Separate edge
+  slider/L locks/unlocks; it has no power-off hold. F9 previews the actual USB
+  screen; F10 the charge choices.
 
 ### Deep firmware bookmark - 2026-11-10
 
@@ -235,7 +236,7 @@ and 1497 host functions. Both sessions were closed; source bytes are unchanged.
 - Playback constructors 0x1537a6/0x153c2c establish title (5,3), metadata (5,20),
   times y37, progress (5,48), tiny counter y55, battery (107,51). Numeric fonts
   30/32 and radio font 31 are embedded too. Title/metadata cadence is still a
-  desktop approximation. Held Left/Right and shell buttons seek after 450 ms,
+  desktop approximation. Held Up/Down and upper/lower face keys seek after 450 ms,
   accelerating 4/5/10/20 seconds; repeat thresholds come from 0x153296, while
   the desktop hold timing and units are adaptations. Shift+arrows seeks 5 sec.
 - Original optional FM constructor 0x154ec0 uses a vertical gauge at (5,0),
@@ -249,7 +250,9 @@ and 1497 host functions. Both sessions were closed; source bytes are unchanged.
   now checks exact WAV/FLAC PCM after a one-second seek; not run by the agent.
 - Owner's later corrections: track counters use four zero-padded digits on
   both sides (0001/0032). Updating has its label vertically centered, percentage
-  underneath and the original progress strip along the bottom (y60), no spinner.
+  underneath and the original progress strip at y59. A later code recheck found
+  the original group-5 spinner at (57,8), now restored. Label/percentage widget
+  rectangles are y29/y44; 12-pixel glyphs are centered at y30/y45.
   It reaches 100% during its final 150 ms and exits after three seconds.
 - Shutdown was missing its animation: constructor 0x15876c centers Bye in
   (2,25,124,14); timer 0x15863e removes the text, then writes 98x46 group-8
@@ -261,3 +264,78 @@ and 1497 host functions. Both sessions were closed; source bytes are unchanged.
 Next: trace remaining playback/recording events, original timer cadence,
 feature flag persistence and service-menu entry conditions. Keep the
 desktop adaptation distinct from recovered firmware behavior.
+
+### UI refinement and fidelity audit bookmark
+
+Read `re/docs/UI_FIDELITY_AUDIT.md` for current source-backed behavior and the
+prioritized gaps. `ui-refinements-dossiers.json` and `lock-dossiers.json` retain
+new pseudocode, assembly and file/evidence identity. REA session closed normally.
+
+- Metadata tick 0x1597cc slides the artist/album text and icons vertically in a
+  clipped 14-pixel row. Long metadata gets a horizontal pass before switching.
+  Desktop uses 100 ms pixel steps. The later modal-flow pass also restores
+  finite title scrolling and title-completion gating (see below).
+- Volume paint 0x15a078 establishes original group-4 bars, thumb, cap marker and
+  plus/minus positions. UI scale is 0..31; persisted percentages remain 0..100.
+  Limit edits preview, Select commits, Back cancels/restores old backend volume.
+- Updating split 0x14ce9e plus assembly establishes spinner/label/percentage/bar
+  geometry; 0x14d106 chooses whole original strip frames 7.24..7.34. Do not
+  replace them with a hand-drawn fill. Empty-list scanning uses group 5 too;
+  group 8 belongs to shutdown.
+- Custom EQ event/paint 0x15423c/0x15441a now supplies actual editor geometry,
+  two-unit gain steps and Select/Back band traversal. DSP remains approximate.
+- Photo `ref/tpv_3433752.avif` shows four face keys with an empty center:
+  Up, Back left, Play/Pause right, Down. Separate volume keys stay. Shared
+  `src/controls.h` maps shell controls and is covered by native tests. Keyboard
+  Left=Back, Right=Select, Up/Down transport/navigation, Shift+Up/Down seek/preset.
+  Separate top lock-only slider is the owner's preference, not pixel-calibrated
+  hardware placement. M is a desktop Options shortcut, not a face button.
+- Lock/unlock is a timed full-screen dialog, not a permanent overlay. Constructor
+  0x15802a creates 24x37 closed/open group-3 graphics at (52,11), theme variants
+  15..17/18..20. Painter 0x157be0 clears its full 128x64 bounds using palette
+  background. Tick 0x157c10 counts 4 down to zero then posts dismissal, with
+  period 25 from the root constructor; actual tick milliseconds are unknown.
+  Desktop shows feedback for 1250 ms, then restores the page while lock stays
+  active. Locked keypresses re-show it; unlock uses the open bitmap. No moving
+  intermediate padlock frames were found in this dialog. Remove stale MENU
+  instructions; the lock control is slider/L.
+
+Validation: native tests check metadata intermediate frames/clipping, original
+volume pixels/limit cancel, EQ traversal, real body-action mapping and full-screen
+lock/open pixels, timeout restoration/retrigger and rotation in all three themes.
+Windows is crosscompiled, but new shell input and hardware services still need a
+Windows runtime check; Wine's startup restriction remains unchanged.
+
+### Title, playlist and modal-flow follow-up
+
+- `ui-flow-dossiers.json` retains new code/assembly and evidence identities.
+  `UI_FIDELITY_AUDIT.md` now distinguishes resolved issues from remaining gaps.
+- Title 0x159d3c/0x159ede/0x159e28 initially shows clipped text without ellipsis,
+  holds ten updates, scrolls once until fully offscreen, restores a prefix up to
+  106 pixels plus original ellipsis and stops. Metadata waits for completion.
+  Desktop uses 100-ms updates. Track/title changes restart both controllers;
+  repeat renders do not advance animation state.
+- Music > Playlists now has exact state-0x12 entries: Playlist-on-the-Go, Add
+  To Playlist, Remove From Playlist. Add requires a current queued track;
+  removal opens the playlist song list. Both use original prompt/filename rows.
+- M is a desktop shortcut only for the current track on the playback page:
+  Play Mode, Sound, applicable Add/Remove, Delete. It has no recovered combined
+  Options counterpart. Removed orphaned Add bookmark; legacy Books/Bookmarks
+  pages remain internal until the actual audiobook feature gate is recovered.
+- Confirmations use the fixed Play/OK and Back/Cancel footer (y49), no Yes/No
+  list/cursor. Reset uses Restore. Generic one/two/three prompt rows follow
+  0x157de8; recording explicitly uses y6/y28 and a quoted filename (0x157532).
+  Select confirms, Back cancels; Up/Down/volume are ignored. Footer clicks work,
+  prompt clicks do not commit. Recording Back/Cancel discards only pending WAV.
+- Playlist dialog 0x15b3e0/0x15af5e supplies locale-dependent row positions and
+  track confirmation; footer x2/w83 and x86/w40, or x2/w60 and x66/w60 for
+  languages 18/19/20/23. Right caption is right aligned and clipped to its widget.
+  Generic notices are fullscreen text without the invented checkmark; exact
+  specialized success/error layouts and every locale's text behavior remain gaps.
+- Radio menu now uses actual Presets, Manual tune, Auto tune order. Auto tune
+  has its three-line confirmation; the internet adapter then shows configured
+  stations instead of scanning hardware.
+- Tests cover title stop/ellipsis/reset/gating, fixed prompt/footer pixels,
+  playlist routes/commit/cancel, recording save/discard, reset/cancel and a
+  disposable file delete guarded by Play/OK. Native fake services are not a
+  Windows microphone/network/body runtime verification.

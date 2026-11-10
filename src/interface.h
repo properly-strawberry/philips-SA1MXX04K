@@ -38,7 +38,7 @@ enum class Page { Home,Music,Artists,Albums,Group,Songs,Folders,Playing,Options,
     Settings,Theme,PlayMode,Repeat,Shuffle,Sound,Equalizer,CustomEQ,VolumeLimit,Display,
     Backlight,ScreenOff,Rotation,Language,Information,Legal,Confirm,Message,Radio,
     RadioOptions,Presets,Recordings,Recording,Recorded,Playlists,Books,Bookmarks,
-    USB,USBConnected };
+    USB,USBConnected,PlaylistRemove };
 enum class Key { Previous,Next,Up,Down,Select,Back,Home,Menu,VolumeUp,VolumeDown,
     SeekBack,SeekForward,Lock };
 struct Frame { Page page; int selected=0,scroll=0; std::wstring group; int groupMode=0; fs::path directory; };
@@ -94,11 +94,23 @@ private:
     bool booting_=true,finishedHandled_=false,dim_=false,blank_=false;
     bool shuttingDown_=false;
     uint64_t shutdownAt_=0;
+    uint64_t lockUntil_=0;
     bool updating_=true;
     int transportDirection_=0,transportRepeats_=0;
     uint64_t transportPressed_=0,transportTick_=0;
+    std::array<int,4> clip_{0,0,128,64};
+    std::array<std::wstring,2> metadataLabels_;
+    uint64_t metadataAt_=0;
+    bool metadataStarted_=false;
+    std::wstring titleLabel_;
+    uint64_t titleAt_=0,titleDoneAt_=0;
+    bool titleStarted_=false;
+    int limitDraft_=-1,volumeBeforeLimit_=0;
     double pendingResume_=-1;
-    std::wstring notice_,prompt_;
+    std::wstring notice_;
+    std::vector<std::pair<int,std::wstring>> promptRows_;
+    bool restorePrompt_=false;
+    fs::path optionPath_;
     std::function<void()> confirm_;
     std::vector<Item> items();
     std::wstring tr(int id) const;
@@ -109,9 +121,16 @@ private:
     void playQueue(std::vector<fs::path> paths,int index);
     void next(int direction,bool automatic=false);
     void volume(int delta);
+    void adjustLimit(int delta);
+    void drawVolume(bool editing);
+    void drawMetadata(const std::wstring& artist,const std::wstring& album,uint32_t color);
+    void drawTitle(const std::wstring& value,uint32_t color);
     void tune(int delta,bool preset=false);
     void notice(std::wstring value,int milliseconds=1600);
-    void confirm(std::wstring value,std::function<void()> yes);
+    void confirm(std::wstring value,std::function<void()> yes,bool restore=false);
+    void confirmRows(std::vector<std::pair<int,std::wstring>> rows,std::function<void()> yes,bool restore=false);
+    void playlistAction(const fs::path& path,bool remove);
+    void openOptions();
     void put(int x,int y,uint32_t color);
     void rect(int x,int y,int w,int h,uint32_t color);
     void image(unsigned id,int x,int y,int sourceWidth=-1,int sourceHeight=-1);
