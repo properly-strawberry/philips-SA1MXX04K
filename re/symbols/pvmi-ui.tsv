@@ -56,3 +56,7 @@
 0x150904	ui_menu_preselect	Observed menu eligibility checks including current-queue requirement for playlist Add	F
 0x14edf6	ui_static_menu_event	Observed menu navigation and select/back dispatch	F
 0x157288	ui_recording_finish	Observed cancellation flag and pending recording cleanup	F
+0x15228e	ui_browser_save_cursor	Observed save of selected browser row to per-depth cursor array	F
+0x1522f8	ui_browser_create	Observed construction from retained browser state	F
+0x15cf9c	ui_browser_restore_state	Observed cached cursor restoration from RAM 0x10b4	F
+0x15cd92	ui_browser_start_playback	Observed save of browser row before independent playback index selection	F

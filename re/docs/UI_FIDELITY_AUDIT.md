@@ -14,6 +14,7 @@ equivalence with the physical player.
 | Area | Observed evidence | Desktop result |
 | --- | --- | --- |
 | Home and lists | Constructors/painters 0x152db4/0x152934, menu builder 0x150264 | Original bubbles, icon coordinates, centered selection, folder/check icons, recovered submenu tables |
+| Browser return | 0x15228e / 0x15cd92 / 0x15cf9c | Restores the saved browser cursor after playback, even if playback advanced; static finding in BROWSER_CURSOR.md |
 | Playback | 0x1537a6/0x153c2c, numeric fonts 30/32 | Original title/metadata/time/progress/status placements; counters padded to four digits at owner's request |
 | Title | 0x159d3c/0x159ede/0x159e28 | Hold, one full pass, restore glyph-boundary prefix plus original ellipsis, stop; metadata waits for completion |
 | Artist/album | Tick 0x1597cc and constructor 0x159ada | Clipped 14-pixel row; horizontal pass for long metadata before the two rows slide upward together; desktop 100 ms steps |

@@ -1,0 +1,1020 @@
+[
+  {
+    "address": "0x15228e",
+    "evidence_id": "ev_721f1495ad99fa7b551f6114781858dd0fc894de259e406c74f1ee93055e20b1",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15228e",
+      "name": "FUN_0015228e",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15228e",
+            "end": "0x1522a1"
+          }
+        ],
+        "total_bytes": 20,
+        "span_bytes": 20,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015228e()",
+      "locals": []
+    },
+    "pseudocode": "\nvoid FUN_0015228e(void)\n\n{\n  *(undefined4 *)(DAT_001522c0 + (uint)*DAT_001522bc * 4) =\n       *(undefined4 *)(*(int *)(*DAT_001522c4 + 0x2c) + 8);\n  return;\n}\n\n",
+    "assembly": [
+      "0x15228e: ldr r2, [0x001522bc]",
+      "0x152290: ldrb r3, [r2,#0x0]",
+      "0x152292: lsls r3, r3, #0x2",
+      "0x152294: ldr r0, [0x001522c0]",
+      "0x152296: ldr r2, [0x001522c4]",
+      "0x152298: ldr r1, [r2,#0x0]",
+      "0x15229a: ldr r1, [r1,#0x2c]",
+      "0x15229c: ldr r1, [r1,#0x8]",
+      "0x15229e: str r1, [r0,r3]",
+      "0x1522a0: bx lr"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  },
+  {
+    "address": "0x15cd92",
+    "evidence_id": "ev_1aea2dfcb159b9f95aad7cdd3f40eb66d26c0f39abd94a9b7c4391b1ffc1c53e",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15cd92",
+      "name": "FUN_0015cd92",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15cd92",
+            "end": "0x15cdbd"
+          },
+          {
+            "start": "0x15ce04",
+            "end": "0x15cea3"
+          }
+        ],
+        "total_bytes": 204,
+        "span_bytes": 274,
+        "non_contiguous": true,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015cd92()",
+      "locals": [
+        {
+          "description": "undefined4 local_10 @ Stack[-0x10]:4",
+          "provenance": "ghidra-function-database"
+        }
+      ]
+    },
+    "pseudocode": "\nundefined4 FUN_0015cd92(int param_1,int param_2)\n\n{\n  int iVar1;\n  int local_10;\n  \n  local_10 = 0;\n  if (param_2 == 0) {\n    if (*DAT_0015ce00 == '\\a') {\n      FUN_0015cc9e(param_1,*(undefined4 *)(DAT_0015cdc0 + (uint)*DAT_0015cdc4 * 4));\n      FUN_0019fbf6(1,&local_10);\n    }\n    else {\n      FUN_0019fbb2(DAT_0015cdc0 + (uint)*DAT_0015cf1c * 4,0);\n      FUN_0019fbf6(1,&local_10);\n    }\n    if (local_10 == 0) {\n      return 0xffffffff;\n    }\n  }\n  *(undefined4 *)(DAT_0015cf20 + (uint)*DAT_0015cf1c * 4) = *(undefined4 *)(param_1 + 8);\n  iVar1 = FUN_0015cbf8(param_1,param_2);\n  if (iVar1 < 0) {\n    iVar1 = 0;\n  }\n  if (param_2 == 0) {\n    FUN_00160f00(0,iVar1);\n    if ((*(uint *)(DAT_0015cf24 + 0xc) & 0x1f) >> 2 == 1) {\n      FUN_001608fc(local_10,1);\n      FUN_00160a8e(iVar1,1);\n      return 0;\n    }\n  }\n  else {\n    if (param_2 == 1) {\n      FUN_00160f00(3,iVar1);\n      return 0;\n    }\n    if (param_2 == 6) {\n      FUN_00160f00(1,iVar1);\n      return 0;\n    }\n    FUN_00160f00(2,iVar1);\n  }\n  return 0;\n}\n\n",
+    "assembly": [
+      "0x15cd92: push {r4,r5,lr}",
+      "0x15cd94: sub sp, #0x4",
+      "0x15cd96: adds r5, r0, #0x0",
+      "0x15cd98: adds r4, r1, #0x0",
+      "0x15cd9a: movs r3, #0x0",
+      "0x15cd9c: str r3, [sp,#0x0]",
+      "0x15cd9e: cmp r4, #0x0",
+      "0x15cda0: bne 0x0015ce36",
+      "0x15cda2: ldr r1, [0x0015ce00]",
+      "0x15cda4: movs r0, #0x0",
+      "0x15cda6: ldrsb r3, [r1,r0]",
+      "0x15cda8: ldr r0, [0x0015cdc0]",
+      "0x15cdaa: cmp r3, #0x7",
+      "0x15cdac: bne 0x0015ce14",
+      "0x15cdae: ldr r2, [0x0015cdc4]",
+      "0x15cdb0: ldrb r3, [r2,#0x0]",
+      "0x15cdb2: lsls r3, r3, #0x2",
+      "0x15cdb4: ldr r1, [r0,r3]",
+      "0x15cdb6: adds r0, r5, #0x0",
+      "0x15cdb8: bl 0x0015cc9e",
+      "0x15cdbc: b 0x0015ce04",
+      "0x15ce04: mov r1, sp",
+      "0x15ce06: movs r0, #0x1",
+      "0x15ce08: bl 0x0019fbf6",
+      "0x15ce0c: ldr r3, [sp,#0x0]",
+      "0x15ce0e: cmp r3, #0x0",
+      "0x15ce10: bne 0x0015ce36",
+      "0x15ce12: b 0x0015ce30",
+      "0x15ce14: ldr r2, [0x0015cf1c]",
+      "0x15ce16: ldrb r3, [r2,#0x0]",
+      "0x15ce18: lsls r3, r3, #0x2",
+      "0x15ce1a: adds r0, r0, r3",
+      "0x15ce1c: movs r1, #0x0",
+      "0x15ce1e: bl 0x0019fbb2",
+      "0x15ce22: mov r1, sp",
+      "0x15ce24: movs r0, #0x1",
+      "0x15ce26: bl 0x0019fbf6",
+      "0x15ce2a: ldr r3, [sp,#0x0]",
+      "0x15ce2c: cmp r3, #0x0",
+      "0x15ce2e: bne 0x0015ce36",
+      "0x15ce30: movs r0, #0x0",
+      "0x15ce32: mvns r0, r0",
+      "0x15ce34: b 0x0015cea0",
+      "0x15ce36: ldr r2, [0x0015cf1c]",
+      "0x15ce38: ldrb r3, [r2,#0x0]",
+      "0x15ce3a: lsls r3, r3, #0x2",
+      "0x15ce3c: ldr r0, [0x0015cf20]",
+      "0x15ce3e: ldr r1, [r5,#0x8]",
+      "0x15ce40: str r1, [r0,r3]",
+      "0x15ce42: adds r1, r4, #0x0",
+      "0x15ce44: adds r0, r5, #0x0",
+      "0x15ce46: bl 0x0015cbf8",
+      "0x15ce4a: adds r5, r0, #0x0",
+      "0x15ce4c: bpl 0x0015ce50",
+      "0x15ce4e: movs r5, #0x0",
+      "0x15ce50: adds r1, r5, #0x0",
+      "0x15ce52: cmp r4, #0x0",
+      "0x15ce54: bne 0x0015ce7c",
+      "0x15ce56: movs r0, #0x0",
+      "0x15ce58: bl 0x00160f00",
+      "0x15ce5c: ldr r2, [0x0015cf24]",
+      "0x15ce5e: ldr r3, [r2,#0xc]",
+      "0x15ce60: lsls r3, r3, #0x1b",
+      "0x15ce62: lsrs r3, r3, #0x1d",
+      "0x15ce64: cmp r3, #0x1",
+      "0x15ce66: bne 0x0015ce9e",
+      "0x15ce68: ldr r0, [sp,#0x0]",
+      "0x15ce6a: movs r1, #0x1",
+      "0x15ce6c: bl 0x001608fc",
+      "0x15ce70: adds r0, r5, #0x0",
+      "0x15ce72: movs r1, #0x1",
+      "0x15ce74: bl 0x00160a8e",
+      "0x15ce78: movs r0, #0x0",
+      "0x15ce7a: b 0x0015cea0",
+      "0x15ce7c: cmp r4, #0x1",
+      "0x15ce7e: bne 0x0015ce8a",
+      "0x15ce80: movs r0, #0x3",
+      "0x15ce82: bl 0x00160f00",
+      "0x15ce86: movs r0, #0x0",
+      "0x15ce88: b 0x0015cea0",
+      "0x15ce8a: cmp r4, #0x6",
+      "0x15ce8c: bne 0x0015ce98",
+      "0x15ce8e: movs r0, #0x1",
+      "0x15ce90: bl 0x00160f00",
+      "0x15ce94: movs r0, #0x0",
+      "0x15ce96: b 0x0015cea0",
+      "0x15ce98: movs r0, #0x2",
+      "0x15ce9a: bl 0x00160f00",
+      "0x15ce9e: movs r0, #0x0",
+      "0x15cea0: add sp, #0x4",
+      "0x15cea2: pop {r4,r5,pc}"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  },
+  {
+    "address": "0x15cf9c",
+    "evidence_id": "ev_6aeec8380fa613ebea83a779fce31b1a27ae34bca8b5fea823afa2fab7c4e168",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15cf9c",
+      "name": "FUN_0015cf9c",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15cf9c",
+            "end": "0x15d145"
+          }
+        ],
+        "total_bytes": 426,
+        "span_bytes": 426,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015cf9c()",
+      "locals": [
+        {
+          "description": "undefined2 local_16 @ Stack[-0x16]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_18 @ Stack[-0x18]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_1a @ Stack[-0x1a]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_1c @ Stack[-0x1c]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_1e @ Stack[-0x1e]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_20 @ Stack[-0x20]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_22 @ Stack[-0x22]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_24 @ Stack[-0x24]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_28 @ Stack[-0x28]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_2c @ Stack[-0x2c]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_30 @ Stack[-0x30]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_34 @ Stack[-0x34]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_36 @ Stack[-0x36]:2",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined2 local_38 @ Stack[-0x38]:2",
+          "provenance": "ghidra-function-database"
+        }
+      ]
+    },
+    "pseudocode": "\nundefined4 * FUN_0015cf9c(int param_1)\n\n{\n  undefined4 *puVar1;\n  int iVar2;\n  int iVar3;\n  uint uVar4;\n  undefined4 local_38;\n  undefined2 local_24;\n  undefined2 local_22;\n  undefined2 local_20;\n  undefined2 local_1e;\n  undefined2 local_1c;\n  undefined2 local_1a;\n  undefined2 local_18;\n  undefined2 local_16;\n  \n  puVar1 = (undefined4 *)FUN_00148a6c(0x84,1);\n  *DAT_0015d148 = (int)puVar1;\n  if (puVar1 != (undefined4 *)0x0) {\n    puVar1[0x1f] = 0;\n    iVar3 = DAT_0015d14c;\n    iVar2 = FUN_0015c51c(DAT_0015d14c);\n    if (iVar2 == 0) {\n      puVar1[2] = 0;\n      *DAT_0015d150 = 0;\n      *DAT_0015d154 = 0;\n      FUN_00167b00(0,(int)*(short *)(DAT_0015d15c + *DAT_0015d158 * 2),iVar3);\n      iVar2 = (uint)*DAT_0015d150 << 2;\n    }\n    else {\n      iVar2 = (uint)*DAT_0015d150 * 4;\n      puVar1[2] = DAT_0015d154[*DAT_0015d150];\n    }\n    FUN_001623f4(iVar2 + iVar3,puVar1 + 0xb,puVar1 + 0x1f);\n    FUN_001627c6(puVar1 + 0xb);\n    FUN_0015c52c(param_1,puVar1);\n    FUN_00149fd8(&local_1c,9,0x1d,0x6f,0xe);\n    local_38 = CONCAT22(local_1a,local_1c);\n    iVar3 = FUN_00196db8(puVar1 + 1,2,0,local_38,CONCAT22(local_16,local_18),1,puVar1[6]);\n    if (iVar3 == 0) {\n      iVar3 = puVar1[1];\n      *(uint *)(iVar3 + 0x28) = *(uint *)(iVar3 + 0x28) & 0xffff3fff;\n      if ((*DAT_0015d158 == '\\a') && ((int)((uint)*(byte *)((int)puVar1 + 0x12) << 0x1e) < 0)) {\n        *(undefined2 *)(iVar3 + 0x10) = 0x1a;\n        *(undefined2 *)(iVar3 + 0x14) = 0x5e;\n      }\n      uVar4 = *(uint *)(iVar3 + 0x28) & 0xfffcffff;\n      *(uint *)(iVar3 + 0x28) = uVar4 | 0x10000;\n      *(undefined4 *)(iVar3 + 0x2c) = *(undefined4 *)(DAT_0015d160 + 8);\n      *(undefined4 *)(iVar3 + 0x30) = 0xff00;\n      *(uint *)(iVar3 + 0x28) = uVar4 | 0x10100;\n      FUN_00146db0(iVar3,0x105,DAT_0015d164);\n      iVar3 = puVar1[1];\n      if ((int)*(short *)(iVar3 + 0x14) < (int)(uint)*(ushort *)(iVar3 + 0x40)) {\n        *(uint *)(iVar3 + 0x28) = *(uint *)(iVar3 + 0x28) & 0xffffe3ff | 0x400;\n        *(undefined2 *)(iVar3 + 0x26) = 10;\n        FUN_00196d4c(param_1,iVar3);\n      }\n      else {\n        *(uint *)(iVar3 + 0x28) = *(uint *)(iVar3 + 0x28) & 0xffffe3ff;\n        FUN_00196d4c(param_1,iVar3);\n      }\n    }\n    FUN_00149fd8(&local_24,(int)((*(ushort *)(param_1 + 0x14) - 2) * 0x10000) >> 0x10,0,2,\n                 *(undefined2 *)(param_1 + 0x16));\n    local_38 = CONCAT22(local_22,local_24);\n    iVar3 = FUN_00196db8(puVar1,DAT_0015d168,0,local_38,CONCAT22(local_1e,local_20),puVar1[3] + -1,\n                         puVar1[2],0);\n    if (iVar3 == 0) {\n      FUN_00196d4c(param_1,*puVar1);\n    }\n  }\n  return puVar1;\n}\n\n",
+    "assembly": [
+      "0x15cf9c: push {r4,r5,r6,r7,lr}",
+      "0x15cf9e: sub sp, #0x20",
+      "0x15cfa0: adds r6, r0, #0x0",
+      "0x15cfa2: movs r0, #0x84",
+      "0x15cfa4: movs r1, #0x1",
+      "0x15cfa6: bl 0x00148a6c",
+      "0x15cfaa: ldr r2, [0x0015d148]",
+      "0x15cfac: str r0, [r2,#0x0]",
+      "0x15cfae: adds r5, r0, #0x0",
+      "0x15cfb0: bne 0x0015cfb4",
+      "0x15cfb2: b 0x0015d140",
+      "0x15cfb4: movs r3, #0x0",
+      "0x15cfb6: str r3, [r5,#0x7c]",
+      "0x15cfb8: ldr r7, [0x0015d14c]",
+      "0x15cfba: adds r0, r7, #0x0",
+      "0x15cfbc: bl 0x0015c51c",
+      "0x15cfc0: cmp r0, #0x0",
+      "0x15cfc2: bne 0x0015cfea",
+      "0x15cfc4: str r0, [r5,#0x8]",
+      "0x15cfc6: movs r3, #0x0",
+      "0x15cfc8: ldr r1, [0x0015d150]",
+      "0x15cfca: strb r3, [r1,#0x0]",
+      "0x15cfcc: ldr r1, [0x0015d154]",
+      "0x15cfce: str r3, [r1,#0x0]",
+      "0x15cfd0: adds r2, r7, #0x0",
+      "0x15cfd2: ldr r0, [0x0015d158]",
+      "0x15cfd4: ldrsb r3, [r0,r3]",
+      "0x15cfd6: lsls r3, r3, #0x1",
+      "0x15cfd8: ldr r0, [0x0015d15c]",
+      "0x15cfda: ldrsh r1, [r0,r3]",
+      "0x15cfdc: movs r0, #0x0",
+      "0x15cfde: bl 0x00167b00",
+      "0x15cfe2: ldr r0, [0x0015d150]",
+      "0x15cfe4: ldrb r4, [r0,#0x0]",
+      "0x15cfe6: lsls r4, r4, #0x2",
+      "0x15cfe8: b 0x0015cff6",
+      "0x15cfea: ldr r1, [0x0015d150]",
+      "0x15cfec: ldrb r4, [r1,#0x0]",
+      "0x15cfee: lsls r4, r4, #0x2",
+      "0x15cff0: ldr r3, [0x0015d154]",
+      "0x15cff2: ldr r0, [r3,r4]",
+      "0x15cff4: str r0, [r5,#0x8]",
+      "0x15cff6: adds r2, r5, #0x0",
+      "0x15cff8: adds r2, #0x7c",
+      "0x15cffa: adds r1, r5, #0x0",
+      "0x15cffc: adds r1, #0x2c",
+      "0x15cffe: adds r0, r4, r7",
+      "0x15d000: bl 0x001623f4",
+      "0x15d004: adds r0, r5, #0x0",
+      "0x15d006: adds r0, #0x2c",
+      "0x15d008: bl 0x001627c6",
+      "0x15d00c: adds r1, r5, #0x0",
+      "0x15d00e: adds r0, r6, #0x0",
+      "0x15d010: bl 0x0015c52c",
+      "0x15d014: movs r3, #0xe",
+      "0x15d016: str r3, [sp,#0x0]",
+      "0x15d018: movs r3, #0x6f",
+      "0x15d01a: movs r2, #0x1d",
+      "0x15d01c: movs r1, #0x9",
+      "0x15d01e: add r0, sp,#0x18",
+      "0x15d020: bl 0x00149fd8",
+      "0x15d024: ldr r3, [r5,#0x18]",
+      "0x15d026: str r3, [sp,#0x8]",
+      "0x15d028: movs r0, #0x1",
+      "0x15d02a: str r0, [sp,#0x4]",
+      "0x15d02c: sub sp, #0x4",
+      "0x15d02e: add r0, sp,#0x1c",
+      "0x15d030: mov r1, sp",
+      "0x15d032: ldrh r2, [r0,#0x0]",
+      "0x15d034: strh r2, [r1,#0x0]",
+      "0x15d036: ldrh r2, [r0,#0x2]",
+      "0x15d038: strh r2, [r1,#0x2]",
+      "0x15d03a: ldrh r2, [r0,#0x4]",
+      "0x15d03c: strh r2, [r1,#0x4]",
+      "0x15d03e: ldrh r0, [r0,#0x6]",
+      "0x15d040: strh r0, [r1,#0x6]",
+      "0x15d042: pop {r3}",
+      "0x15d044: adds r0, r5, #0x4",
+      "0x15d046: movs r2, #0x0",
+      "0x15d048: movs r1, #0x2",
+      "0x15d04a: bl 0x00196db8",
+      "0x15d04e: cmp r0, #0x0",
+      "0x15d050: bne 0x0015d0e8",
+      "0x15d052: ldr r0, [r5,#0x4]",
+      "0x15d054: ldr r3, [r0,#0x28]",
+      "0x15d056: movs r1, #0x3",
+      "0x15d058: lsls r1, r1, #0xe",
+      "0x15d05a: bics r3, r1",
+      "0x15d05c: str r3, [r0,#0x28]",
+      "0x15d05e: ldr r2, [0x0015d158]",
+      "0x15d060: movs r1, #0x0",
+      "0x15d062: ldrsb r3, [r2,r1]",
+      "0x15d064: cmp r3, #0x7",
+      "0x15d066: bne 0x0015d076",
+      "0x15d068: ldrb r1, [r5,#0x12]",
+      "0x15d06a: lsls r3, r1, #0x1e",
+      "0x15d06c: bpl 0x0015d076",
+      "0x15d06e: movs r3, #0x1a",
+      "0x15d070: strh r3, [r0,#0x10]",
+      "0x15d072: movs r3, #0x5e",
+      "0x15d074: strh r3, [r0,#0x14]",
+      "0x15d076: ldr r2, [r0,#0x28]",
+      "0x15d078: movs r1, #0x3",
+      "0x15d07a: lsls r1, r1, #0x10",
+      "0x15d07c: bics r2, r1",
+      "0x15d07e: movs r1, #0x1",
+      "0x15d080: lsls r1, r1, #0x10",
+      "0x15d082: orrs r2, r1",
+      "0x15d084: str r2, [r0,#0x28]",
+      "0x15d086: ldr r1, [0x0015d160]",
+      "0x15d088: ldr r3, [r1,#0x8]",
+      "0x15d08a: str r3, [r0,#0x2c]",
+      "0x15d08c: movs r3, #0xff",
+      "0x15d08e: lsls r3, r3, #0x8",
+      "0x15d090: str r3, [r0,#0x30]",
+      "0x15d092: movs r1, #0x1",
+      "0x15d094: adds r1, #0xff",
+      "0x15d096: orrs r1, r2",
+      "0x15d098: str r1, [r0,#0x28]",
+      "0x15d09a: ldr r2, [0x0015d164]",
+      "0x15d09c: movs r1, #0x6",
+      "0x15d09e: adds r1, #0xff",
+      "0x15d0a0: bl 0x00146db0",
+      "0x15d0a4: ldr r0, [r5,#0x4]",
+      "0x15d0a6: movs r3, #0x40",
+      "0x15d0a8: ldrh r1, [r3,r0]",
+      "0x15d0aa: movs r2, #0x14",
+      "0x15d0ac: ldrsh r2, [r0,r2]",
+      "0x15d0ae: ldr r3, [r0,#0x28]",
+      "0x15d0b0: cmp r1, r2",
+      "0x15d0b2: ble 0x0015d0d8",
+      "0x15d0b4: movs r1, #0x7",
+      "0x15d0b6: lsls r1, r1, #0xa",
+      "0x15d0b8: bics r3, r1",
+      "0x15d0ba: movs r1, #0x1",
+      "0x15d0bc: lsls r1, r1, #0xa",
+      "0x15d0be: orrs r3, r1",
+      "0x15d0c0: str r3, [r0,#0x28]",
+      "0x15d0c2: ldrh r3, [r0,#0x26]",
+      "0x15d0c4: lsrs r3, r3, #0x10",
+      "0x15d0c6: lsls r3, r3, #0x10",
+      "0x15d0c8: movs r1, #0xa",
+      "0x15d0ca: orrs r3, r1",
+      "0x15d0cc: strh r3, [r0,#0x26]",
+      "0x15d0ce: adds r1, r0, #0x0",
+      "0x15d0d0: adds r0, r6, #0x0",
+      "0x15d0d2: bl 0x00196d4c",
+      "0x15d0d6: b 0x0015d0e8",
+      "0x15d0d8: movs r1, #0x7",
+      "0x15d0da: lsls r1, r1, #0xa",
+      "0x15d0dc: bics r3, r1",
+      "0x15d0de: str r3, [r0,#0x28]",
+      "0x15d0e0: adds r1, r0, #0x0",
+      "0x15d0e2: adds r0, r6, #0x0",
+      "0x15d0e4: bl 0x00196d4c",
+      "0x15d0e8: adds r3, r6, #0x0",
+      "0x15d0ea: adds r3, #0x10",
+      "0x15d0ec: adds r0, r3, #0x4",
+      "0x15d0ee: ldrh r3, [r3,#0x6]",
+      "0x15d0f0: str r3, [sp,#0x0]",
+      "0x15d0f2: ldrh r0, [r0,#0x0]",
+      "0x15d0f4: subs r1, r0, #0x2",
+      "0x15d0f6: lsls r1, r1, #0x10",
+      "0x15d0f8: asrs r1, r1, #0x10",
+      "0x15d0fa: add r0, sp,#0x10",
+      "0x15d0fc: movs r3, #0x2",
+      "0x15d0fe: movs r2, #0x0",
+      "0x15d100: bl 0x00149fd8",
+      "0x15d104: movs r3, #0x0",
+      "0x15d106: str r3, [sp,#0xc]",
+      "0x15d108: ldr r0, [r5,#0x8]",
+      "0x15d10a: str r0, [sp,#0x8]",
+      "0x15d10c: ldr r0, [r5,#0xc]",
+      "0x15d10e: subs r0, #0x1",
+      "0x15d110: str r0, [sp,#0x4]",
+      "0x15d112: sub sp, #0x4",
+      "0x15d114: add r0, sp,#0x14",
+      "0x15d116: mov r1, sp",
+      "0x15d118: ldrh r2, [r0,#0x0]",
+      "0x15d11a: strh r2, [r1,#0x0]",
+      "0x15d11c: ldrh r2, [r0,#0x2]",
+      "0x15d11e: strh r2, [r1,#0x2]",
+      "0x15d120: ldrh r2, [r0,#0x4]",
+      "0x15d122: strh r2, [r1,#0x4]",
+      "0x15d124: ldrh r0, [r0,#0x6]",
+      "0x15d126: strh r0, [r1,#0x6]",
+      "0x15d128: pop {r3}",
+      "0x15d12a: ldr r1, [0x0015d168]",
+      "0x15d12c: adds r0, r5, #0x0",
+      "0x15d12e: movs r2, #0x0",
+      "0x15d130: bl 0x00196db8",
+      "0x15d134: cmp r0, #0x0",
+      "0x15d136: bne 0x0015d140",
+      "0x15d138: ldr r1, [r5,#0x0]",
+      "0x15d13a: adds r0, r6, #0x0",
+      "0x15d13c: bl 0x00196d4c",
+      "0x15d140: adds r0, r5, #0x0",
+      "0x15d142: add sp, #0x20",
+      "0x15d144: pop {r4,r5,r6,r7,pc}"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  },
+  {
+    "address": "0x15c51c",
+    "evidence_id": "ev_db26968a2cc50dea499fdeb33f71a49445b8104c7dc1ed98a2f0e6b6837d50ee",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15c51c",
+      "name": "FUN_0015c51c",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15c51c",
+            "end": "0x15c529"
+          }
+        ],
+        "total_bytes": 14,
+        "span_bytes": 14,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015c51c()",
+      "locals": []
+    },
+    "pseudocode": "\nbool FUN_0015c51c(int *param_1)\n\n{\n  return *param_1 != -1;\n}\n\n",
+    "assembly": [
+      "0x15c51c: ldr r3, [r0,#0x0]",
+      "0x15c51e: adds r3, #0x1",
+      "0x15c520: bne 0x0015c526",
+      "0x15c522: movs r0, #0x0",
+      "0x15c524: b 0x0015c528",
+      "0x15c526: movs r0, #0x1",
+      "0x15c528: bx lr"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  },
+  {
+    "address": "0x1522f8",
+    "evidence_id": "ev_1095dbf88ee517ed37df07886cad57728840bd204ce4d4251dff9f5ab81b5e98",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x1522f8",
+      "name": "FUN_001522f8",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x1522f8",
+            "end": "0x15231f"
+          }
+        ],
+        "total_bytes": 40,
+        "span_bytes": 40,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_001522f8()",
+      "locals": []
+    },
+    "pseudocode": "\nvoid FUN_001522f8(int param_1)\n\n{\n  int iVar1;\n  \n  iVar1 = FUN_0015cf9c(param_1);\n  *(int *)(param_1 + 0x2c) = iVar1;\n  if (iVar1 != 0) {\n    FUN_00146e00(param_1,0);\n    FUN_00196cd8(param_1);\n  }\n  return;\n}\n\n",
+    "assembly": [
+      "0x1522f8: push {r4,r5,r6,r7,lr}",
+      "0x1522fa: adds r4, r0, #0x0",
+      "0x1522fc: adds r5, r4, #0x0",
+      "0x1522fe: adds r0, r4, #0x0",
+      "0x152300: bl 0x0015cf9c",
+      "0x152304: adds r2, r0, #0x0",
+      "0x152306: movs r6, #0x2c",
+      "0x152308: adds r3, r5, r6",
+      "0x15230a: str r2, [r3,#0x0]",
+      "0x15230c: cmp r2, #0x0",
+      "0x15230e: beq 0x0015231e",
+      "0x152310: adds r0, r4, #0x0",
+      "0x152312: movs r1, #0x0",
+      "0x152314: bl 0x00146e00",
+      "0x152318: adds r0, r4, #0x0",
+      "0x15231a: bl 0x00196cd8",
+      "0x15231e: pop {r4,r5,r6,r7,pc}"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  },
+  {
+    "address": "0x15cb9a",
+    "evidence_id": "ev_e83539636ebdd4b3a2d261c0c91ea9eb6b1fcb3226d1134c35d9e8b1f86fea85",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15cb9a",
+      "name": "FUN_0015cb9a",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15cb9a",
+            "end": "0x15cbf7"
+          }
+        ],
+        "total_bytes": 94,
+        "span_bytes": 94,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015cb9a()",
+      "locals": []
+    },
+    "pseudocode": "\nundefined4 FUN_0015cb9a(undefined4 param_1,int param_2)\n\n{\n  byte *pbVar1;\n  int iVar2;\n  uint uVar3;\n  undefined4 uVar4;\n  \n  iVar2 = DAT_0015cdc8;\n  pbVar1 = DAT_0015cdc4;\n  uVar3 = (uint)*DAT_0015cdc4;\n  uVar4 = DAT_0015cdd0;\n  if (uVar3 != 0) {\n    *(undefined4 *)(DAT_0015cdc8 + uVar3 * 4) = *(undefined4 *)(param_2 + 8);\n    *pbVar1 = (byte)(uVar3 - 1);\n    *(undefined4 *)(param_2 + 0x7c) = 0;\n    FUN_001623f4(DAT_0015cdc0 + (uVar3 - 1 & 0xff) * 4,param_2 + 0x2c,param_2 + 0x7c);\n    FUN_001627c6(param_2 + 0x2c);\n    *(undefined4 *)(param_2 + 8) = *(undefined4 *)(iVar2 + (uint)*pbVar1 * 4);\n    uVar4 = FUN_0015c52c(param_1,param_2);\n    FUN_0015d16c(param_1,param_2,1);\n  }\n  return uVar4;\n}\n\n",
+    "assembly": [
+      "0x15cb9a: push {r4,r5,r6,r7,lr}",
+      "0x15cb9c: adds r7, r0, #0x0",
+      "0x15cb9e: ldr r5, [0x0015cdc4]",
+      "0x15cba0: ldrb r0, [r5,#0x0]",
+      "0x15cba2: cmp r0, #0x0",
+      "0x15cba4: bne 0x0015cbaa",
+      "0x15cba6: ldr r5, [0x0015cdd0]",
+      "0x15cba8: b 0x0015cbf4",
+      "0x15cbaa: adds r4, r1, #0x0",
+      "0x15cbac: ldr r6, [0x0015cdc8]",
+      "0x15cbae: lsls r3, r0, #0x2",
+      "0x15cbb0: ldr r1, [r4,#0x8]",
+      "0x15cbb2: str r1, [r6,r3]",
+      "0x15cbb4: subs r0, #0x1",
+      "0x15cbb6: strb r0, [r5,#0x0]",
+      "0x15cbb8: lsls r0, r0, #0x18",
+      "0x15cbba: lsrs r0, r0, #0x16",
+      "0x15cbbc: movs r3, #0x0",
+      "0x15cbbe: str r3, [r4,#0x7c]",
+      "0x15cbc0: adds r2, r4, #0x0",
+      "0x15cbc2: adds r2, #0x7c",
+      "0x15cbc4: adds r1, r4, #0x0",
+      "0x15cbc6: adds r1, #0x2c",
+      "0x15cbc8: ldr r3, [0x0015cdc0]",
+      "0x15cbca: adds r0, r3, r0",
+      "0x15cbcc: bl 0x001623f4",
+      "0x15cbd0: adds r0, r4, #0x0",
+      "0x15cbd2: adds r0, #0x2c",
+      "0x15cbd4: bl 0x001627c6",
+      "0x15cbd8: ldrb r3, [r5,#0x0]",
+      "0x15cbda: lsls r3, r3, #0x2",
+      "0x15cbdc: ldr r0, [r6,r3]",
+      "0x15cbde: str r0, [r4,#0x8]",
+      "0x15cbe0: adds r1, r4, #0x0",
+      "0x15cbe2: adds r0, r7, #0x0",
+      "0x15cbe4: bl 0x0015c52c",
+      "0x15cbe8: adds r5, r0, #0x0",
+      "0x15cbea: adds r1, r4, #0x0",
+      "0x15cbec: adds r0, r7, #0x0",
+      "0x15cbee: movs r2, #0x1",
+      "0x15cbf0: bl 0x0015d16c",
+      "0x15cbf4: adds r0, r5, #0x0",
+      "0x15cbf6: pop {r4,r5,r6,r7,pc}"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  },
+  {
+    "address": "0x15e66e",
+    "evidence_id": "ev_1858164c17ed50e9f380139eadff59ac3622f536890c061b98b6fde03f21b5e5",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15e66e",
+      "name": "FUN_0015e66e",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15e66e",
+            "end": "0x15e6a7"
+          }
+        ],
+        "total_bytes": 58,
+        "span_bytes": 58,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015e66e()",
+      "locals": [
+        {
+          "description": "undefined4 local_10 @ Stack[-0x10]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_18 @ Stack[-0x18]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_20 @ Stack[-0x20]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_24 @ Stack[-0x24]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_28 @ Stack[-0x28]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_c @ Stack[-0xc]:4",
+          "provenance": "ghidra-function-database"
+        }
+      ]
+    },
+    "pseudocode": "\nundefined4 FUN_0015e66e(void)\n\n{\n  undefined4 *puVar1;\n  undefined1 auStack_1c [4];\n  uint local_18;\n  undefined1 auStack_14 [4];\n  undefined4 local_10;\n  undefined4 local_c;\n  \n  puVar1 = DAT_0015e8ac;\n  local_10 = DAT_0015e8b4;\n  local_c = 0;\n  FUN_00013078(*DAT_0015e8ac,auStack_1c,auStack_14,&local_18,auStack_1c,auStack_14,auStack_1c);\n  if (1 < local_18) {\n    FUN_000132b0(*puVar1,&local_10,0);\n  }\n  return 0;\n}\n\n",
+    "assembly": [
+      "0x15e66e: push {r4,lr}",
+      "0x15e670: sub sp, #0x20",
+      "0x15e672: ldr r3, [0x0015e8b4]",
+      "0x15e674: str r3, [sp,#0x18]",
+      "0x15e676: movs r3, #0x0",
+      "0x15e678: str r3, [sp,#0x1c]",
+      "0x15e67a: add r3, sp,#0xc",
+      "0x15e67c: str r3, [sp,#0x8]",
+      "0x15e67e: add r0, sp,#0x14",
+      "0x15e680: str r0, [sp,#0x4]",
+      "0x15e682: str r3, [sp,#0x0]",
+      "0x15e684: adds r3, #0x4",
+      "0x15e686: adds r2, r3, #0x4",
+      "0x15e688: subs r1, r3, #0x4",
+      "0x15e68a: ldr r4, [0x0015e8ac]",
+      "0x15e68c: ldr r0, [r4,#0x0]",
+      "0x15e68e: bl 0x00013078",
+      "0x15e692: ldr r3, [sp,#0x10]",
+      "0x15e694: cmp r3, #0x2",
+      "0x15e696: bcc 0x0015e6a2",
+      "0x15e698: add r1, sp,#0x18",
+      "0x15e69a: ldr r0, [r4,#0x0]",
+      "0x15e69c: movs r2, #0x0",
+      "0x15e69e: bl 0x000132b0",
+      "0x15e6a2: movs r0, #0x0",
+      "0x15e6a4: add sp, #0x20",
+      "0x15e6a6: pop {r4,pc}"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  },
+  {
+    "address": "0x15e6a8",
+    "evidence_id": "ev_df51d6cb60652fc548472a7d97afa3fe44e83637304e2f4f5894bebfc0c0bab9",
+    "subject": {
+      "name": "pvmi-mapped.elf",
+      "digest": {
+        "sha256": "094dadb25b312573973d0806c9838e787a2ba6e76405691d16223d6ef0c65ecf"
+      },
+      "local_path": "/d/Development/reverse/rea-work/philips/gen/deep/pvmi-mapped.elf",
+      "format": "elf",
+      "architecture": "arm"
+    },
+    "procedure": {
+      "address": "0x15e6a8",
+      "name": "FUN_0015e6a8",
+      "symbol": {
+        "primary": true,
+        "dynamic": false,
+        "external": false,
+        "type": "function",
+        "source": "default"
+      },
+      "classification": {
+        "external": false,
+        "thunk": false,
+        "thunk_target": null,
+        "provenance": "ghidra-function-manager"
+      },
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x15e6a8",
+            "end": "0x15e6e3"
+          }
+        ],
+        "total_bytes": 60,
+        "span_bytes": 60,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "signature": "undefined FUN_0015e6a8()",
+      "locals": [
+        {
+          "description": "undefined4 local_10 @ Stack[-0x10]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_18 @ Stack[-0x18]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_20 @ Stack[-0x20]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_24 @ Stack[-0x24]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_28 @ Stack[-0x28]:4",
+          "provenance": "ghidra-function-database"
+        },
+        {
+          "description": "undefined4 local_c @ Stack[-0xc]:4",
+          "provenance": "ghidra-function-database"
+        }
+      ]
+    },
+    "pseudocode": "\nundefined4 FUN_0015e6a8(void)\n\n{\n  undefined4 *puVar1;\n  undefined1 auStack_1c [4];\n  uint local_18;\n  undefined1 auStack_14 [4];\n  undefined4 local_10;\n  undefined4 local_c;\n  \n  puVar1 = DAT_0015e8ac;\n  local_10 = DAT_0015e8b4;\n  local_c = 1;\n  FUN_00013078(*DAT_0015e8ac,auStack_1c,auStack_14,&local_18,auStack_1c,auStack_14,auStack_1c);\n  if (1 < local_18) {\n    FUN_000132b0(*puVar1,&local_10,0xffffffff);\n  }\n  return 0;\n}\n\n",
+    "assembly": [
+      "0x15e6a8: push {r4,lr}",
+      "0x15e6aa: sub sp, #0x20",
+      "0x15e6ac: ldr r3, [0x0015e8b4]",
+      "0x15e6ae: str r3, [sp,#0x18]",
+      "0x15e6b0: movs r3, #0x1",
+      "0x15e6b2: str r3, [sp,#0x1c]",
+      "0x15e6b4: add r3, sp,#0xc",
+      "0x15e6b6: str r3, [sp,#0x8]",
+      "0x15e6b8: add r0, sp,#0x14",
+      "0x15e6ba: str r0, [sp,#0x4]",
+      "0x15e6bc: str r3, [sp,#0x0]",
+      "0x15e6be: adds r3, #0x4",
+      "0x15e6c0: adds r2, r3, #0x4",
+      "0x15e6c2: subs r1, r3, #0x4",
+      "0x15e6c4: ldr r4, [0x0015e8ac]",
+      "0x15e6c6: ldr r0, [r4,#0x0]",
+      "0x15e6c8: bl 0x00013078",
+      "0x15e6cc: ldr r3, [sp,#0x10]",
+      "0x15e6ce: cmp r3, #0x2",
+      "0x15e6d0: bcc 0x0015e6de",
+      "0x15e6d2: movs r2, #0x0",
+      "0x15e6d4: mvns r2, r2",
+      "0x15e6d6: add r1, sp,#0x18",
+      "0x15e6d8: ldr r0, [r4,#0x0]",
+      "0x15e6da: bl 0x000132b0",
+      "0x15e6de: movs r0, #0x0",
+      "0x15e6e0: add sp, #0x20",
+      "0x15e6e2: pop {r4,pc}"
+    ],
+    "limitations": [
+      "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+      "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+      "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+      "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+      "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+      "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+      "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "The Java bridge serializes one function request per Program. Decompilation runs until completion or caller cancellation unless REA_GHIDRA_DECOMPILE_TIMEOUT_SECONDS sets a per-function limit. That limit stops the requested decompile without requesting session closure; caller cancellation requests session closure."
+    ]
+  }
+]

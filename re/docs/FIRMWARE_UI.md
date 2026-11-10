@@ -440,3 +440,16 @@ sources, service-menu entry sequence, remaining playback/recording state logic,
 original DSP coefficients and all power-management behavior. These
 findings substantially constrain the reconstruction; they do not establish
 firmware emulation or complete behavioral/pixel lockstep.
+
+## Browser cursor on return from playback
+
+A focused recheck of A -> B -> Back supports keeping A highlighted. Save
+callback 0x15228e and playback-start helper 0x15cd92 preserve the browser row
+in a per-depth array at RAM 0x10b4. Playback Back (0x1532e6) requests browser
+page 0x23 when its prior context remains valid. Constructor 0x15cf9c restores
+that saved row; it does not substitute the current playback index. Queue
+Next/Previous requests go through 0x15e66e/0x15e6a8 to a separate worker.
+
+This is a static, derived conclusion for the saved-browser path, not a device
+runtime observation. No desktop cursor behavior was changed. Full evidence
+and limitations: BROWSER_CURSOR.md and browser-cursor-dossiers.json.

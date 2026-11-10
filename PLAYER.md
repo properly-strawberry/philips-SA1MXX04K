@@ -73,6 +73,10 @@ services remain adaptations.
 
 All songs scans Music recursively. Artists and Albums use FFmpeg metadata.
 Folder view browses individual directories.
+Back from playback restores the list's remembered selection. If A was selected
+when playback opened, advancing to B does not move that saved cursor to B.
+The traced firmware return path behaves this way too; details are in
+`re/docs/BROWSER_CURSOR.md`.
 Selecting a song in Folder view queues that directory's songs. All songs queues
 the scanned library. Playback continues while browsing. Music > Playlists contains the recovered Playlist-on-the-Go, Add To Playlist
 and Remove From Playlist entries. Add uses the current queued track; Remove

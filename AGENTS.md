@@ -102,6 +102,16 @@ useful evidence to `re/docs/` before closing an ephemeral analysis session.
 
 ## Repository housekeeping
 
+Repository privacy: the owner explicitly permits retaining the firmware and
+unit serials (2026-11-10). Keep personal names, account/contact information,
+media libraries and runtime configuration out of repository content. See
+`re/docs/PRIVACY_AUDIT.md` for the working-tree audit and its scope limits.
+This permission does not authorize changing the immutable original capture.
+
+`README.md` is the public project overview, including exact model SA1MXX04K/37,
+firmware product/component BCD 1.21.0, SB 1.1 and header timestamp. Keep its
+links/build prerequisites accurate; extraction still needs shared parent tools.
+
 `gen/` is ignored. `.gitattributes` uses the workspace template with additional
 SB/ELF binary rules and byte-preservation for the original capture directory.
 Keep source dumps, specs and evidence distinct from reproducible outputs.
@@ -339,3 +349,15 @@ Windows runtime check; Wine's startup restriction remains unchanged.
   playlist routes/commit/cancel, recording save/discard, reset/cancel and a
   disposable file delete guarded by Play/OK. Native fake services are not a
   Windows microphone/network/body runtime verification.
+
+### Saved browser cursor after playback
+
+`re/docs/BROWSER_CURSOR.md` and `browser-cursor-dossiers.json` document the
+A -> B -> Back question. Derived normal firmware behavior is to restore A,
+the browser's saved cursor, rather than focus the now-playing B. Save callback
+0x15228e and play-start 0x15cd92 write the per-depth cursor at RAM 0x10b4;
+Back in 0x1532e6 returns to browser page 0x23, whose constructor 0x15cf9c
+restores that cursor. Next/Previous requests use separate playback-worker state.
+Do not change the desktop cursor-follow behavior under a claim of firmware
+fidelity without new evidence. No controller change was made for this lookup.
+This is a static conclusion; no physical-device trace was performed.
