@@ -26,7 +26,7 @@ using namespace Gdiplus;
 using player::Key;
 using player::Page;
 using player::SliderPosition;
-constexpr int W=920,H=380;
+constexpr int W=920,H=412;
 constexpr UINT ScanDone=WM_APP+1;
 HWND window;
 fs::path appDir,musicDir,layoutDir;
@@ -118,27 +118,23 @@ void cancelHeldControls(HWND hwnd,bool releaseCapture) {
 }
 void renderScreen(){ui->render();screen=ui->screen;}
 std::wstring trackTitle(const TrackInfo&){return ui->currentTitle();}
-std::unique_ptr<GraphicsPath> rounded(float x,float y,float w,float h,float r) {
-    auto p=std::make_unique<GraphicsPath>();float d=r*2;p->AddArc(x,y,d,d,180,90);p->AddArc(x+w-d,y,d,d,270,90);
-    p->AddArc(x+w-d,y+h-d,d,d,0,90);p->AddArc(x,y+h-d,d,d,90,90);p->CloseFigure();return p;
-}
 void label(Graphics& g,float x,float y,float w,float h,const wchar_t* value,float size,Color color,bool bold=false) {
     Font font(L"Segoe UI",size,bold?FontStyleBold:FontStyleRegular,UnitPixel);
     SolidBrush brush(color);StringFormat format;format.SetAlignment(StringAlignmentCenter);format.SetLineAlignment(StringAlignmentCenter);
     g.DrawString(value,-1,&font,RectF(x,y,w,h),&format,&brush);
 }
+// The shell is assets/shell/shell.svg, prerendered by tools/render_shell.py and
+// embedded as PNGs (src/player.rc). These rectangles are that drawing's, in the
+// window's logical pixels: the click areas, and where each prerendered patch goes.
 struct Button { int x,y,w,h; const wchar_t* hint; };
-constexpr int bodyLeft=25,bodyWidth=866;
-constexpr int powerLeft=666,powerWidth=78,powerPlateLeft=24,powerPlateRight=28;
-constexpr int volumeWidth=2*powerWidth,volumeRim=3;
-constexpr int controlEdgeGap=bodyLeft+bodyWidth-(powerLeft+powerWidth+powerPlateRight);
-constexpr int volumeLeft=bodyLeft+controlEdgeGap+volumeRim,volumeEndWidth=volumeWidth/3;
 const Button buttons[]={
-    {710,79,64,44,L"Up / previous / hold to seek"},{654,139,50,68,L"Back"},{powerLeft,29,powerWidth,21,L"Lock / unlock / hold power"},
-    {780,139,50,68,L"Play / pause / select"},{710,222,64,44,L"Down / next / hold to seek"},
-    {volumeLeft,29,volumeEndWidth,21,L"Volume down"},{volumeLeft+volumeWidth-volumeEndWidth,29,volumeEndWidth,21,L"Volume up"}
+    {700,92,96,68,L"Up / previous / hold to seek"},{622,160,68,96,L"Back"},{635,27,149,24,L"Lock / unlock / hold power"},
+    {806,160,68,96,L"Play / pause / select"},{700,256,96,68,L"Down / next / hold to seek"},
+    {181,27,85,24,L"Volume down"},{350,27,85,24,L"Volume up"}
 };
 static_assert(std::size(buttons)==player::bodyButtonCount);
+const RectF rockerPatch(175,17,266,44),padPatch(612,68,274,280),handlePatch(655,23,110,34);
+const Rect lcdArea(208,112,384,192);
 int buttonAt(float x,float y) { for(size_t i=0;i<std::size(buttons);i++){auto b=buttons[i];if(x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h)return int(i);}return -1; }
 PointF playerPoint(HWND hwnd,LPARAM point) {
     RECT r;GetClientRect(hwnd,&r);float scale=std::max(.001f,std::min(float(r.right)/W,float(r.bottom)/H));
@@ -153,99 +149,76 @@ bool sliderHandleAt(float x) {
     float left=b.x+2+sliderMotion.position()*travel;
     return x>=left&&x<left+handleWidth;
 }
-void drawSlider(Graphics& g) {
-    // The owner's original three-position slider supersedes the earlier lock-only control.
-    auto b=buttons[2];float x=float(b.x),y=float(b.y),w=float(b.w),h=float(b.h),cy=y+h/2;
-    auto plate=rounded(x-powerPlateLeft,y-4,w+powerPlateLeft+powerPlateRight,h+8,8);
-    LinearGradientBrush mounting(PointF(x,y-4),PointF(x,y+h+4),Color(255,48,55,65),Color(255,15,20,27));
-    g.FillPath(&mounting,plate.get());Pen plateEdge(Color(255,111,121,135),1);g.DrawPath(&plateEdge,plate.get());
-    auto groove=rounded(x,y,w,h,h/2);
-    LinearGradientBrush recess(PointF(x,y),PointF(x,y+h),Color(255,5,7,10),Color(255,49,55,63));
-    g.FillPath(&recess,groove.get());Pen edge(Color(255,25,29,35),1.2f);g.DrawPath(&edge,groove.get());
-    auto inner=rounded(x+1.5f,y+1.5f,w-3,h-3,(h-3)/2);SolidBrush dark(Color(255,13,16,20));g.FillPath(&dark,inner.get());
-    float handleWidth=(w-4)*2/3,travel=w-4-handleWidth;
-    auto position=ui->sliderPosition();float fraction=sliderMotion.position();
-    float handleX=x+2+fraction*travel;
-    auto shadow=rounded(handleX,y+3,handleWidth,h-4,(h-4)/2);SolidBrush shade(Color(170,0,0,0));g.FillPath(&shade,shadow.get());
-    auto handle=rounded(handleX,y+1.5f,handleWidth,h-4,(h-4)/2);
-    LinearGradientBrush grip(PointF(handleX,y+1.5f),PointF(handleX,y+h-2.5f),Color(255,119,127,138),Color(255,44,51,61));
-    g.FillPath(&grip,handle.get());Pen rim(position==SliderPosition::Power?Color(255,113,230,250):Color(255,163,173,187),.9f);g.DrawPath(&rim,handle.get());
-    Pen ribs(Color(255,26,32,41),1);float middle=handleX+handleWidth/2;
-    for(int i=-1;i<=1;i++)g.DrawLine(&ribs,middle+i*4,cy-3,middle+i*4,cy+3);
-    Color ink(255,195,207,220);Pen icon(ink,1.7f);SolidBrush iconBrush(ink);
-    float lockX=x-17;g.DrawArc(&icon,RectF(lockX+1,cy-8,9,9),180,180);
-    auto lockBody=rounded(lockX,cy-3.5f,11,8,2);g.FillPath(&iconBrush,lockBody.get());
-    Pen keyhole(Color(255,30,36,44),1.4f);g.DrawLine(&keyhole,lockX+5.5f,cy-1.5f,lockX+5.5f,cy+2);
-    float powerX=x+w+10;g.DrawArc(&icon,RectF(powerX,cy-6,12,12),-50,280);g.DrawLine(&icon,powerX+6,cy-8,powerX+6,cy);
-}
-void drawVolumeRocker(Graphics& g) {
-    auto left=buttons[5],right=buttons[6];
-    float x=float(left.x),y=float(left.y),w=float(right.x+right.w-left.x),h=float(left.h),cx=x+w/2,cy=y+h/2;
-    auto socket=rounded(x-volumeRim,y-volumeRim,w+2*volumeRim,h+2*volumeRim,(h+2*volumeRim)/2);
-    LinearGradientBrush recess(PointF(x,y-volumeRim),PointF(x,y+h+volumeRim),Color(255,9,12,17),Color(255,53,61,71));
-    g.FillPath(&recess,socket.get());Pen socketRim(Color(255,107,117,130),1);g.DrawPath(&socketRim,socket.get());
-
-    bool minus=keyHeld(Key::VolumeDown),plus=keyHeld(Key::VolumeUp);
-    float tilt=minus&&!plus?-2.0f:plus&&!minus?2.0f:0;
-    // One cap pivots about its center; there is no seam between the two ends.
-    auto saved=g.Save();g.TranslateTransform(cx,cy);g.RotateTransform(tilt);g.TranslateTransform(-cx,-cy);
-    auto shadow=rounded(x,y+2,w,h,h/2);SolidBrush shade(Color(160,0,0,0));g.FillPath(&shade,shadow.get());
-    auto cap=rounded(x,y,w,h,h/2);
-    LinearGradientBrush face(PointF(x,y),PointF(x,y+h),Color(255,105,114,127),Color(255,30,36,45));
-    g.FillPath(&face,cap.get());Pen rim(Color(255,151,163,179),1);g.DrawPath(&rim,cap.get());
-    Pen shine(Color(150,199,210,224),.8f);g.DrawLine(&shine,x+12,y+2,x+w-12,y+2);
-    Color ink(255,205,216,229);Pen symbol(ink,1.8f);
-    float minusX=left.x+left.w/2.0f,plusX=right.x+right.w/2.0f;
-    g.DrawLine(&symbol,minusX-5,cy,minusX+5,cy);
-    g.DrawLine(&symbol,plusX-5,cy,plusX+5,cy);g.DrawLine(&symbol,plusX,cy-5,plusX,cy+5);
-    label(g,cx-19,y+2,38,h-4,L"VOL",9,ink,true);
-    g.Restore(saved);
-}
-void drawButton(Graphics& g,int index) {
-    if(index==2){drawSlider(g);return;}
-    if(index==5){drawVolumeRocker(g);return;}
-    if(index==6)return;
-    auto b=buttons[index];auto path=rounded(float(b.x),float(b.y),float(b.w),float(b.h),8);
-    LinearGradientBrush fill(Point(b.x,b.y),Point(b.x,b.y+b.h),pressed==index?Color(255,62,68,75):Color(255,31,34,39),Color(255,8,9,12));
-    g.FillPath(&fill,path.get());Pen outline(Color(255,67,70,76),1);g.DrawPath(&outline,path.get());
-    Color c=pressed==index?Color(255,113,230,250):Color(255,160,170,178);SolidBrush brush(c);Pen pen(c,2.4f);
-    float cx=b.x+b.w/2.0f,cy=b.y+b.h/2.0f;
-    if(index==1) { g.DrawLine(&pen,cx+8,cy+7,cx+8,cy-3);g.DrawLine(&pen,cx+8,cy-3,cx-9,cy-3);g.DrawLine(&pen,cx-9,cy-3,cx-3,cy-9);g.DrawLine(&pen,cx-9,cy-3,cx-3,cy+3); }
-    if(index==0||index==4) {
-        int d=index==0?-1:1;PointF points[]={{cx,cy+d*7},{cx-7,cy-d*5},{cx+7,cy-d*5}};g.FillPolygon(&brush,points,3);
+// pad: up, down, back, play. backdrop: the resting shell scaled to the window, redrawn when its size changes.
+struct ShellArt { std::unique_ptr<Bitmap> base,rockerMinus,rockerPlus,handle,pad[4],backdrop; } art;
+std::unique_ptr<Bitmap> loadArt(int id) {
+    HRSRC found=FindResourceW(nullptr,MAKEINTRESOURCEW(id),RT_RCDATA);
+    HGLOBAL loaded=found?LoadResource(nullptr,found):nullptr;
+    const void* bytes=loaded?LockResource(loaded):nullptr;DWORD size=found?SizeofResource(nullptr,found):0;
+    HGLOBAL copy=bytes&&size?GlobalAlloc(GMEM_MOVEABLE,size):nullptr;
+    if(!copy)return nullptr;
+    memcpy(GlobalLock(copy),bytes,size);GlobalUnlock(copy);
+    IStream* stream=nullptr;
+    if(CreateStreamOnHGlobal(copy,TRUE,&stream)!=S_OK){GlobalFree(copy);return nullptr;}
+    // Redraw into a bitmap of our own, so nothing depends on the stream afterwards.
+    std::unique_ptr<Bitmap> result;
+    {
+        Bitmap decoded(stream);
+        if(decoded.GetLastStatus()==Ok&&decoded.GetWidth()>0) {
+            result=std::make_unique<Bitmap>(int(decoded.GetWidth()),int(decoded.GetHeight()),PixelFormat32bppPARGB);
+            Graphics copyTo(result.get());copyTo.SetCompositingMode(CompositingModeSourceCopy);
+            copyTo.DrawImage(&decoded,0,0,int(decoded.GetWidth()),int(decoded.GetHeight()));
+        }
     }
-    if(index==3) { PointF p[]={{cx-9,cy-8},{cx+3,cy},{cx-9,cy+8}};g.FillPolygon(&brush,p,3);g.FillRectangle(&brush,cx+6,cy-7,2.0f,14.0f);g.FillRectangle(&brush,cx+11,cy-7,2.0f,14.0f); }
+    stream->Release();
+    return result;
+}
+bool loadShell() {
+    art.base=loadArt(101);art.rockerMinus=loadArt(102);art.rockerPlus=loadArt(103);art.handle=loadArt(108);
+    for(int i=0;i<4;i++)art.pad[i]=loadArt(104+i);
+    return art.base&&art.rockerMinus&&art.rockerPlus&&art.handle&&art.pad[0]&&art.pad[1]&&art.pad[2]&&art.pad[3];
+}
+// Draws a whole prerendered picture into a logical rectangle.
+void drawArt(Graphics& g,Bitmap* image,RectF where) {
+    ImageAttributes edges;edges.SetWrapMode(WrapModeTileFlipXY);
+    g.DrawImage(image,where,0,0,REAL(image->GetWidth()),REAL(image->GetHeight()),UnitPixel,&edges);
 }
 void paint(HDC dc,int width,int height) {
-    Graphics g(dc);g.SetSmoothingMode(SmoothingModeAntiAlias);g.Clear(Color(255,24,27,33));
-    float scale=std::min(float(width)/W,float(height)/H);
-    g.TranslateTransform((width-W*scale)/2,(height-H*scale)/2);g.ScaleTransform(scale,scale);
-    auto shadow=rounded(34,43,858,296,64);SolidBrush shade(Color(255,10,12,17));g.FillPath(&shade,shadow.get());
-    auto shell=rounded(bodyLeft,36,bodyWidth,292,62);
-    LinearGradientBrush metal(Point(0,36),Point(0,328),Color(255,220,224,229),Color(255,87,93,104));
-    REAL positions[]={0,0.1f,0.4f,0.8f,1};Color colors[]={Color(255,164,171,181),Color(255,248,250,252),Color(255,141,147,157),Color(255,99,106,116),Color(255,221,225,232)};
-    metal.SetInterpolationColors(colors,positions,5);g.FillPath(&metal,shell.get());
-    Pen outer(Color(255,226,232,240),1);g.DrawPath(&outer,shell.get());
-    auto face=rounded(38,49,840,264,50);
-    LinearGradientBrush black(Point(38,49),Point(878,313),Color(255,3,4,6),Color(255,28,30,35));g.FillPath(&black,face.get());
-    Pen rim(Color(255,130,136,145),1.2f);g.DrawPath(&rim,face.get());
-    SolidBrush shine(Color(18,255,255,255));g.FillRectangle(&shine,RectF(477,54,120,252));
-    Pen split(Color(255,98,104,113),1);g.DrawLine(&split,625,52,625,309);
-    label(g,53,127,144,40,L"PHILIPS",25,Color(255,176,180,184),true);
-    label(g,72,168,104,25,L"GoGear Mix",13,Color(255,100,111,124));
-    auto glass=rounded(200,74,404,211,9);SolidBrush glassBrush(Color(255,1,3,5));g.FillPath(&glassBrush,glass.get());Pen glassRim(Color(255,34,40,48));g.DrawPath(&glassRim,glass.get());
+    // Only the parts that move are drawn each frame.
+    auto& backdrop=art.backdrop;
+    float scale=std::min(float(width)/W,float(height)/H),left=(width-W*scale)/2,top=(height-H*scale)/2;
+    if(!backdrop||int(backdrop->GetWidth())!=width||int(backdrop->GetHeight())!=height) {
+        backdrop=std::make_unique<Bitmap>(width,height,PixelFormat32bppPARGB);
+        Graphics b(backdrop.get());b.Clear(Color(255,24,27,33));
+        b.SetInterpolationMode(InterpolationModeHighQualityBicubic);b.SetPixelOffsetMode(PixelOffsetModeHalf);
+        drawArt(b,art.base.get(),RectF(left,top,W*scale,H*scale));
+    }
+    Graphics g(dc);g.SetCompositingMode(CompositingModeSourceCopy);g.DrawImage(backdrop.get(),0,0,width,height);
+    g.SetCompositingMode(CompositingModeSourceOver);g.SetSmoothingMode(SmoothingModeAntiAlias);
+    g.TranslateTransform(left,top);g.ScaleTransform(scale,scale);
+    g.SetInterpolationMode(InterpolationModeHighQualityBicubic);g.SetPixelOffsetMode(PixelOffsetModeHalf);
+    // Each patch has a margin identical to the resting picture; clipping inside it leaves no seam.
+    auto patch=[&](Bitmap* image,RectF where) {
+        auto saved=g.Save();g.SetClip(RectF(where.X+3,where.Y+3,where.Width-6,where.Height-6));
+        drawArt(g,image,where);g.Restore(saved);
+    };
+    bool minus=keyHeld(Key::VolumeDown),plus=keyHeld(Key::VolumeUp);
+    if(minus!=plus)patch((minus?art.rockerMinus:art.rockerPlus).get(),rockerPatch);
+    static constexpr int padFor[]={0,2,-1,3,1};   // body button -> up, back, (slider), play, down
+    if(pressed>=0&&pressed<=4&&padFor[pressed]>=0)patch(art.pad[padFor[pressed]].get(),padPatch);
+    auto groove=buttons[2];float travel=(groove.w-4)/3.0f;
+    drawArt(g,art.handle.get(),RectF(handlePatch.X+(sliderMotion.position()-.5f)*travel,handlePatch.Y,handlePatch.Width,handlePatch.Height));
     renderScreen();
     Bitmap bitmap(128,64,128*4,PixelFormat32bppARGB,reinterpret_cast<BYTE*>(screen.data()));
-    g.SetInterpolationMode(InterpolationModeNearestNeighbor);g.SetPixelOffsetMode(PixelOffsetModeHalf);
-    g.DrawImage(&bitmap,Rect(210,83,384,192),0,0,128,64,UnitPixel);
+    g.SetInterpolationMode(InterpolationModeNearestNeighbor);
+    g.DrawImage(&bitmap,lcdArea,0,0,128,64,UnitPixel);
     g.SetPixelOffsetMode(PixelOffsetModeDefault);
-    for(size_t i=0;i<std::size(buttons);i++)drawButton(g,int(i));
     auto info=audio->snapshot();
     std::wstring status=info.playing?(info.paused?L"Paused":L"Playing"):L"Music lives beside philips.exe";
     if(!info.error.empty())status=info.error;
     else if(info.playing)status+=L"  ·  "+trackTitle(info);
-    label(g,40,337,840,19,status.c_str(),12,Color(255,170,183,197));
-    label(g,40,357,840,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume   ·   P: hold power",11,Color(255,111,126,143));
+    label(g,40,H-44,W-80,19,status.c_str(),12,Color(255,170,183,197));
+    label(g,40,H-24,W-80,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume   ·   P: hold power",11,Color(255,111,126,143));
 }
 void saveScreenshot(const std::wstring& path) {
     Bitmap bitmap(W,H,PixelFormat32bppARGB);Graphics graphics(&bitmap);
@@ -369,7 +342,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         pressed=button;pressedAt=GetTickCount64();SetCapture(hwnd);
         if(pressed==2){sliderDragging=true;ui->moveSlider(sliderMotion.press(sliderPointer(x),sliderHandleAt(x)));}
         else if(pressed>=0){if(!alreadyHeld)ui->pressKey(bodyKey(pressed));}
-        else if(pressed<0&&x>=210&&x<594&&y>=83&&y<275)ui->click(int((x-210)/3),int((y-83)/3));
+        else if(pressed<0&&x>=lcdArea.X&&x<lcdArea.X+lcdArea.Width&&y>=lcdArea.Y&&y<lcdArea.Y+lcdArea.Height)ui->click(int((x-lcdArea.X)/3),int((y-lcdArea.Y)/3));
         return 0;
     }
     case WM_MOUSEMOVE:
@@ -415,12 +388,13 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     if(!fs::exists(layoutDir/L"Playlists"/L"Playlist-on-the-Go.m3u8"))atomicText(layoutDir/L"Playlists"/L"Playlist-on-the-Go.m3u8","#EXTM3U\n");
     audio=std::make_unique<Audio>();ui=std::make_unique<player::Interface>(backend,musicDir);ui->tick(GetTickCount64());loadSettings();
     ULONG_PTR token;GdiplusStartupInput startup;GdiplusStartup(&token,&startup,nullptr);
+    if(!loadShell()){MessageBoxW(nullptr,L"The shell artwork inside philips.exe is missing or damaged.",L"GoGear Mix",MB_ICONERROR);ui.reset();audio.reset();art={};GdiplusShutdown(token);return 1;}
     WNDCLASSW klass{};klass.lpfnWndProc=procedure;klass.hInstance=instance;klass.lpszClassName=L"PhilipsGoGearMix";klass.hCursor=LoadCursor(nullptr,IDC_ARROW);klass.hIcon=LoadIconW(instance,MAKEINTRESOURCEW(1));RegisterClassW(&klass);
     RECT bounds{0,0,W,H};AdjustWindowRect(&bounds,WS_OVERLAPPEDWINDOW,FALSE);started=GetTickCount64();
     window=CreateWindowExW(0,klass.lpszClassName,L"Philips GoGear Mix",WS_OVERLAPPEDWINDOW,CW_USEDEFAULT,CW_USEDEFAULT,bounds.right-bounds.left,bounds.bottom-bounds.top,nullptr,nullptr,instance,nullptr);
-    if(!window){ui.reset();audio.reset();GdiplusShutdown(token);return 1;}
+    if(!window){ui.reset();audio.reset();art={};GdiplusShutdown(token);return 1;}
     ShowWindow(window,show);beginScan();MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
-    scanStop=true;if(scanner.joinable())scanner.join();recorder.finish(true);ui.reset();audio.reset();GdiplusShutdown(token);
+    scanStop=true;if(scanner.joinable())scanner.join();recorder.finish(true);ui.reset();audio.reset();art={};GdiplusShutdown(token);
     if(smokeStep>=0)return std::any_of(smokeChecks.begin(),smokeChecks.end(),[](auto& s){return s.rfind("FAIL",0)==0;})?1:0;
     return 0;
 }

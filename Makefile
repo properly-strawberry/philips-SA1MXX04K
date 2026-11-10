@@ -16,7 +16,10 @@ assets: gen/player/assets.h
 map-vmi:
 	python3 -I tools/map_vmi.py
 
-gen/player/resources.o: src/player.rc ref/DEVICON.FIL
+gen/player/shell/base.png: assets/shell/shell.svg tools/render_shell.py
+	../.venv/bin/python -I tools/render_shell.py
+
+gen/player/resources.o: src/player.rc ref/DEVICON.FIL gen/player/shell/base.png
 	mkdir -p gen/player
 	x86_64-w64-mingw32-windres -i src/player.rc -o $@
 

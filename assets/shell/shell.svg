@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The desktop player's shell: the GoGear Mix from the front, with its top
+     surface tipped up into view as part of the same rounded shell so the volume rocker and
+     the lock/power slider can be reached. Coordinates are the window's
+     logical pixels; src/main.cpp keeps the matching click rectangles.
+     tools/render_shell.py prerenders this file. It shows and hides the groups
+     whose ids start with "state-" and cuts out the handle on its own. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="920" height="412" viewBox="0 0 920 412">
+<defs>
+  <!-- One shell: the top surface at the back, rolling over a soft shoulder into the front. -->
+  <linearGradient id="silver" gradientUnits="userSpaceOnUse" x1="0" y1="14" x2="0" y2="354">
+    <stop offset="0" stop-color="#8b9097"/><stop offset="0.022" stop-color="#bcc0c5"/><stop offset="0.10" stop-color="#cbced2"/>
+    <stop offset="0.135" stop-color="#dfe1e4"/><stop offset="0.165" stop-color="#f3f4f5"/><stop offset="0.20" stop-color="#d2d5d9"/>
+    <stop offset="0.25" stop-color="#b9bcc2"/><stop offset="0.82" stop-color="#a6aab0"/><stop offset="0.94" stop-color="#7c8087"/><stop offset="1" stop-color="#8f939a"/>
+  </linearGradient>
+  <linearGradient id="ends" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#000" stop-opacity="0.30"/><stop offset="0.05" stop-color="#000" stop-opacity="0"/>
+    <stop offset="0.95" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.36"/>
+  </linearGradient>
+  <linearGradient id="trim" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#84888f"/><stop offset="0.5" stop-color="#d4d6da"/><stop offset="1" stop-color="#fbfbfc"/>
+  </linearGradient>
+  <linearGradient id="cap" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#eceef0"/><stop offset="0.25" stop-color="#d0d3d7"/><stop offset="0.8" stop-color="#b7bbc1"/><stop offset="1" stop-color="#8d9198"/>
+  </linearGradient>
+  <linearGradient id="recess" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#1c1e22"/><stop offset="0.6" stop-color="#42464c"/><stop offset="1" stop-color="#666a71"/>
+  </linearGradient>
+  <linearGradient id="gloss" x1="0" y1="0" x2="0.06" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0.58"/><stop offset="0.045" stop-color="#fff" stop-opacity="0.34"/><stop offset="0.105" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="padGloss" x1="0" y1="0" x2="0.1" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0.50"/><stop offset="0.10" stop-color="#fff" stop-opacity="0.30"/><stop offset="0.26" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="dishGlow" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#fff" stop-opacity="0.30"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="dishShade" cx="0.5" cy="0.62" r="0.55">
+    <stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.85"/>
+  </radialGradient>
+  <linearGradient id="pressUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.9"/><stop offset="0.34" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="pressDown" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.9"/><stop offset="0.34" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="pressBack" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.9"/><stop offset="0.34" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="pressPlay" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.9"/><stop offset="0.34" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="sinkLeft" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.34"/><stop offset="0.45" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="sinkRight" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.34"/><stop offset="0.45" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <filter id="soft" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="9"/></filter>
+  <filter id="blur1" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="1.4"/></filter>
+  <path id="mainGlass" d="M69 84 H613 V332 H69 A22 22 0 0 1 47 310 V106 A22 22 0 0 1 69 84 Z"/>
+  <path id="padGlass" d="M618 84 C690 77 790 74 842 78 C866 80 879 94 879 118 V298 C879 322 866 336 842 338 C790 342 690 339 618 332 Z"/>
+  <clipPath id="padClip"><use xlink:href="#padGlass"/></clipPath>
+  <clipPath id="mainClip"><use xlink:href="#mainGlass"/></clipPath>
+  <!-- Rocker cap, drawn once and reused tilted. The minus and plus stand proud; VOL is sunk. -->
+  <g id="rockerCap">
+    <rect x="183" y="28.5" width="250" height="21" rx="10.5" fill="url(#cap)"/>
+    <rect x="183.5" y="29" width="249" height="20" rx="10" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="0.8"/>
+    <rect x="208" y="37.6" width="18" height="5" rx="2.5" fill="#6f747b"/>
+    <rect x="208" y="36.3" width="18" height="5" rx="2.5" fill="#e6e8eb"/>
+    <path d="M391 37.6 h5.5 v-5.5 h5 v5.5 h5.5 v5 h-5.5 v5.5 h-5 v-5.5 h-5.5 z" fill="#6f747b"/>
+    <path d="M391 36.3 h5.5 v-5.5 h5 v5.5 h5.5 v5 h-5.5 v5.5 h-5 v-5.5 h-5.5 z" fill="#e6e8eb"/>
+    <text x="308" y="43.9" text-anchor="middle" font-family="Nimbus Sans, Helvetica, Arial, sans-serif" font-weight="bold" font-size="11" letter-spacing="0.6" fill="#f4f5f6">VOL</text>
+    <text x="308" y="43" text-anchor="middle" font-family="Nimbus Sans, Helvetica, Arial, sans-serif" font-weight="bold" font-size="11" letter-spacing="0.6" fill="#a0a4ab">VOL</text>
+  </g>
+</defs>
+
+<rect width="920" height="412" fill="#181b21"/>
+
+<g id="scene">
+  <ellipse cx="458" cy="356" rx="420" ry="16" fill="#000" opacity="0.6" filter="url(#soft)"/>
+
+  <!-- The shell, top surface and front in one piece. -->
+  <rect x="25" y="14" width="866" height="340" rx="48" fill="url(#silver)"/>
+  <rect x="25" y="14" width="866" height="340" rx="48" fill="url(#ends)"/>
+  <rect x="25.5" y="14.5" width="865" height="339" rx="47.5" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/>
+  <!-- Microphone. -->
+  <circle cx="89" cy="40" r="4.2" fill="#0b0c0e"/><path d="M85 41.5 A4.2 4.2 0 0 0 93 41.5" fill="none" stroke="#f2f3f5" stroke-opacity="0.8" stroke-width="0.9"/>
+  <g font-family="Nimbus Sans, Helvetica, Arial, sans-serif" font-weight="bold" font-size="11" letter-spacing="0.6">
+    <text x="101" y="44.9" fill="#f4f5f6">MIC</text><text x="101" y="44" fill="#a0a4ab">MIC</text>
+    <text x="494" y="44.9" text-anchor="middle" fill="#f4f5f6">RESET</text><text x="494" y="44" text-anchor="middle" fill="#a0a4ab">RESET</text>
+  </g>
+  <circle cx="531" cy="40.5" r="4.6" fill="#8b9097"/><path d="M526.6 42 A4.6 4.6 0 0 0 535.4 42" fill="none" stroke="#f2f3f5" stroke-opacity="0.8" stroke-width="0.9"/>
+  <circle cx="531" cy="40.5" r="1.7" fill="#0b0c0e"/>
+  <!-- Padlock and power mark, sunk into the silver. -->
+  <g transform="translate(603 39)">
+    <g transform="translate(0 0.9)" fill="#f4f5f6" stroke="#f4f5f6"><rect x="-6" y="-1.5" width="12" height="9" rx="1.6" stroke="none"/><path d="M-3.4 -1.5 V-4 A3.4 3.4 0 0 1 3.4 -4 V-1.5" fill="none" stroke-width="2"/></g>
+    <g fill="#a0a4ab" stroke="#a0a4ab"><rect x="-6" y="-1.5" width="12" height="9" rx="1.6" stroke="none"/><path d="M-3.4 -1.5 V-4 A3.4 3.4 0 0 1 3.4 -4 V-1.5" fill="none" stroke-width="2"/></g>
+  </g>
+  <g transform="translate(813 39.5)" fill="none" stroke-width="1.7">
+    <g transform="translate(0 0.9)" stroke="#f4f5f6"><circle r="6.6"/><path d="M0 -6.6 V6.6"/></g>
+    <g stroke="#a0a4ab"><circle r="6.6"/><path d="M0 -6.6 V6.6"/></g>
+  </g>
+  <!-- Rocker well and slider slot. -->
+  <rect x="181" y="27" width="254" height="24" rx="12" fill="url(#recess)"/>
+  <rect x="181" y="27.6" width="254" height="24" rx="12" fill="none" stroke="#f4f5f6" stroke-opacity="0.55" stroke-width="0.9"/>
+  <rect x="635" y="27" width="149" height="24" rx="12" fill="url(#recess)"/>
+  <rect x="635" y="27.6" width="149" height="24" rx="12" fill="none" stroke="#f4f5f6" stroke-opacity="0.55" stroke-width="0.9"/>
+
+  <g id="state-rocker-rest"><use xlink:href="#rockerCap"/></g>
+  <g id="state-rocker-minus" display="none"><g transform="rotate(-1.1 308 39)"><use xlink:href="#rockerCap"/><rect x="183" y="28.5" width="250" height="21" rx="10.5" fill="url(#sinkLeft)"/></g></g>
+  <g id="state-rocker-plus" display="none"><g transform="rotate(1.1 308 39)"><use xlink:href="#rockerCap"/><rect x="183" y="28.5" width="250" height="21" rx="10.5" fill="url(#sinkRight)"/></g></g>
+
+  <!-- Polished bead around the glass. -->
+  <path d="M69 80 H613 L618 80 C690 73 790 70 842 74 C869 76 883 92 883 118 V298 C883 324 869 340 842 342 C790 346 690 343 618 336 H69 A26 26 0 0 1 43 310 V106 A26 26 0 0 1 69 80 Z" fill="url(#trim)"/>
+  <path d="M69 82.6 H613 L618 82.6 C690 75.6 790 72.6 842 76.6 C867.4 78.6 880.4 93 880.4 118 V298 C880.4 323 867.4 337.4 842 339.4 C790 343.4 690 340.4 618 333.4 H69 A23.4 23.4 0 0 1 45.6 310 V106 A23.4 23.4 0 0 1 69 82.6 Z" fill="#08090b"/>
+  <!-- Screen glass. -->
+  <use xlink:href="#mainGlass" fill="#0a0b0d"/>
+  <g clip-path="url(#mainClip)"><rect x="47" y="84" width="566" height="248" fill="url(#gloss)"/></g>
+  <rect x="208" y="112" width="384" height="192" fill="#000"/>
+  <g transform="translate(118 208) rotate(-90)">
+    <text text-anchor="middle" y="11" font-family="Nimbus Sans, Helvetica, Arial, sans-serif" font-weight="bold" font-size="30.5" letter-spacing="0.4" fill="#a9adb3" stroke="#a9adb3" stroke-width="0.7">PHILIPS</text>
+  </g>
+  <!-- Joint, then the control plate with its thumb dish. -->
+  <rect x="615" y="84.5" width="1.1" height="247" fill="#8d9198"/>
+  <use xlink:href="#padGlass" fill="#0a0b0d"/>
+  <g clip-path="url(#padClip)">
+    <rect x="618" y="72" width="262" height="272" fill="url(#padGloss)"/>
+    <circle cx="748" cy="208" r="76" fill="#0a0b0d"/>
+    <circle cx="748" cy="208" r="76" fill="url(#dishShade)" opacity="0.55"/>
+    <ellipse cx="772" cy="238" rx="38" ry="26" transform="rotate(-24 772 238)" fill="url(#dishGlow)"/>
+  </g>
+  <g id="padMarks" fill="#9a9ea5">
+    <path id="markUp" d="M748 104 l7 12 h-14 z"/>
+    <path id="markDown" d="M748 312 l7 -12 h-14 z"/>
+    <g id="markBack"><path d="M638 213 H652 A5 5 0 0 0 652 203 H648" fill="none" stroke="#9a9ea5" stroke-width="3.4" stroke-linecap="round"/><path d="M641 203 l8 -6.5 v13 z"/></g>
+    <g id="markPlay"><path d="M840 201 l11 7 l-11 7 z"/><rect x="855" y="201.5" width="2.6" height="13"/><rect x="860.2" y="201.5" width="2.6" height="13"/></g>
+  </g>
+  <!-- One lean of the plate at a time: its edge drops into shadow and the mark lights up. -->
+  <g id="state-pad-up" display="none"><g clip-path="url(#padClip)"><rect x="618" y="72" width="262" height="272" fill="url(#pressUp)"/></g><use xlink:href="#markUp" fill="#fff"/></g>
+  <g id="state-pad-down" display="none"><g clip-path="url(#padClip)"><rect x="618" y="72" width="262" height="272" fill="url(#pressDown)"/></g><use xlink:href="#markDown" fill="#fff"/></g>
+  <g id="state-pad-back" display="none"><g clip-path="url(#padClip)"><rect x="618" y="72" width="262" height="272" fill="url(#pressBack)"/></g>
+    <path d="M638 213 H652 A5 5 0 0 0 652 203 H648" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><path d="M641 203 l8 -6.5 v13 z" fill="#fff"/></g>
+  <g id="state-pad-play" display="none"><g clip-path="url(#padClip)"><rect x="618" y="72" width="262" height="272" fill="url(#pressPlay)"/></g><use xlink:href="#markPlay" fill="#fff"/></g>
+</g>
+
+<!-- Slider handle, drawn in the middle of its slot (unlocked). main.cpp moves it. -->
+<g id="state-handle" display="none">
+  <rect x="662" y="31" width="96.67" height="20" rx="10" fill="#000" opacity="0.55" filter="url(#blur1)"/>
+  <rect x="661.17" y="29" width="96.67" height="20" rx="10" fill="url(#cap)"/>
+  <rect x="661.67" y="29.5" width="95.67" height="19" rx="9.5" fill="none" stroke="#fff" stroke-opacity="0.6" stroke-width="0.8"/>
+</g>
+</svg>

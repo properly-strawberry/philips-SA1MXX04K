@@ -17,7 +17,13 @@ Playlists/radio.example.json
 
 This is a new desktop implementation with original extracted firmware graphics
 and bitmap font. It does not emulate the firmware or claim original UI lockstep.
-The shell is drawn from the product photo in `ref/` and arranged horizontally.
+The shell is one drawing, `assets/shell/shell.svg`, made from the product photo
+and a photo of the owner's player and arranged horizontally. Its top surface
+is tipped up into view as part of the same rounded silver shell, so the
+microphone, volume rocker, reset hole and lock/power slider sit above the front
+in the order they have on the device. The four face keys are the marks on the
+glossy plate to the right of the screen. The build prerenders the drawing with
+resvg and embeds the pictures in the EXE.
 The EXE/window icon is the original `ref/DEVICON.FIL` (12 icon variants).
 The five home categories animate in Dark, Blue and Pink themes, with bubbles
 on the left: Music, Recordings, Folder View, Settings, Now/Last Played.
@@ -49,11 +55,13 @@ services remain adaptations.
 
 ## Controls
 
-- Click the shell buttons or the screen's menu rows.
+- Click the marks on the control plate, the ends of the rocker, the slider, or
+  the screen's menu rows.
 - Up / Down: navigate; while playing, tap for previous / next track or hold
-  to seek with increasing speed. The upper/lower face buttons do the same.
+  to seek with increasing speed. The upper/lower marks on the plate do the same.
 - Left: Back. Right, Enter or Space: select / open / play or pause.
-  The left face button is Back; the right face button is Play/Pause/Select.
+  The left mark is Back; the right mark is Play/Pause/Select. The pressed mark
+  lights up and that edge of the plate darkens.
 - Shift + Up / Down: seek five seconds; click the progress bar to seek.
 - Backspace or Escape: Back. Home: main menu.
 - Hold Back to return to the main menu from ordinary menus. In a recording or
@@ -64,24 +72,23 @@ services remain adaptations.
 - M: current-track shortcuts while on the playback screen, or radio options.
   The track shortcut menu is a desktop addition: Play Mode, Sound Settings,
   Add To Playlist or Remove From Playlist as appropriate, and Delete.
-- Right-side top slider: left latches Lock; center is Unlocked; hold right for power-off.
+- Slider on the top surface, right of center: left latches Lock; center is Unlocked; hold right for power-off.
   The right position springs back to center on release. L toggles Lock/Unlocked;
   holding P is the keyboard equivalent of holding the slider right. Releasing
   early, losing focus/capture or moving away cancels an unfinished power hold.
   Lock/unlock briefly replaces the whole screen with the original closed/open
   padlock, then restores the current page. Locked buttons show the padlock again.
   Feedback lasts 1.25 seconds, a desktop interpretation of firmware timer ticks.
-- The left-side volume rocker is one solid piece marked "- VOL +", pivoting
-  at its center. Click or hold its left/right end for Vol-/Vol+; the labeled
-  center is neutral. Its cap is twice the power groove's width, with the same
-  outer edge margin as the complete right-side switch block. Keyboard Plus /
-  Minus also works.
+- The volume rocker on the top surface, left of center, is one solid piece
+  marked "- VOL +", pivoting at its center. Click or hold its left/right third
+  for Vol-/Vol+; the labeled middle is neutral. The cap tilts toward the held
+  end. Keyboard Plus / Minus also works.
 - Volume and menu navigation repeat while held, with the same controller for
   mouse buttons and keyboard. Short actions complete on release; a recognized
   long action does not fire another short action on release. Custom EQ repeats
   gain changes; Volume Limit uses Vol-/Vol+, while Up/Down is ignored.
-- The slider's icons share a dark backing plate. Its handle follows a rightward
-  drag smoothly, arming power near the right stop, and eases back to center on
+- A padlock mark sits left of the slider's slot and a power mark right of it.
+  The handle follows a rightward drag smoothly, arming power near the right stop, and eases back to center on
   release. The left Lock detent snaps into place and stays latched.
 - F9: original Connected-to-PC screen. Up/Down cycles FullyCharged, Charging
   and Do not disconnect. F10: localized Charge & transfer / Charge & play preview.
@@ -188,7 +195,10 @@ battery and prerendered FullyCharged text at the recovered coordinates.
 
 ## Build from Linux
 
-Requires MinGW-w64 x64 POSIX C++, Python 3 and OpenSSL for initial SB extraction.
+Requires MinGW-w64 x64 POSIX C++, Python 3 and OpenSSL for initial SB extraction,
+and a Python environment with the `resvg-py` package at `../.venv` for
+prerendering the shell drawing (`tools/render_shell.py`, which also expects the
+URW Nimbus Sans Bold font used for the lettering).
 No system installation is performed by the build. Obtain the FFmpeg LGPL shared
 Windows SDK described in `third_party/FFMPEG.md`, unpack its include/lib/bin into
 `third_party/ffmpeg/`, and regenerate the firmware outputs if absent (see
@@ -199,7 +209,8 @@ make -C philips package
 ```
 
 The app uses libavformat, libavcodec, libswresample and libavutil directly.
-It does not spawn ffmpeg.exe. Assets are embedded into philips.exe.
+It does not spawn ffmpeg.exe. Assets are embedded into philips.exe, including
+the shell pictures prerendered into `gen/player/shell/`.
 Generated files, the dependency SDK and dist outputs are ignored by git.
 
 Diagnostic command lines (paths may contain Unicode):

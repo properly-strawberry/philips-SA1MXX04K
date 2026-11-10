@@ -18,3 +18,13 @@
    VALUE "Translation", 0x409, 1200
   END
  END
+
+// Shell artwork: assets/shell/shell.svg, prerendered by tools/render_shell.py.
+101 RCDATA "gen/player/shell/base.png"
+102 RCDATA "gen/player/shell/rocker_minus.png"
+103 RCDATA "gen/player/shell/rocker_plus.png"
+104 RCDATA "gen/player/shell/pad_up.png"
+105 RCDATA "gen/player/shell/pad_down.png"
+106 RCDATA "gen/player/shell/pad_back.png"
+107 RCDATA "gen/player/shell/pad_play.png"
+108 RCDATA "gen/player/shell/handle.png"

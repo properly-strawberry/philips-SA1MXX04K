@@ -490,3 +490,33 @@ and its mounting socket's left margin matches the whole right switch block's
 right margin to the body edge (119 pixels each). main.cpp derives these bounds
 from shared layout constants; include the icon backing plate and rocker rim
 when measuring outer margins. Right block position remains unchanged.
+
+### SVG shell - 2026-11-11
+
+The owner asked for a simple redraw of the shell, not a renderer. The shell is
+now one hand-written drawing, `assets/shell/shell.svg`: flat front view at the
+old proportions, with the top surface tipped up into view as part of one
+rounded shell (owner rejected a separate strip as disconnected;
+MIC, rocker, RESET, lock mark, slider, power mark, left to right as on her
+device). Silver follows the product shot; the white in her photo is bare
+plastic. MIC/RESET/VOL/lock/power are inset in the same silver; the rocker's
+minus and plus are raised, the two signs only.
+
+- `tools/render_shell.py` prerenders it with resvg (owner's choice; `resvg-py`
+  0.5.0 in `../.venv`, installed with her approval) at 2x into ignored
+  `gen/player/shell/`: the resting picture, patches for both rocker ends and the
+  four pad leans, and the handle alone. It toggles the groups whose ids start
+  with `state-` and narrows the root viewBox for patches. `make` runs it with
+  `../.venv/bin/python -I`. It names the Nimbus Sans Bold font file explicitly.
+- `src/player.rc` embeds the PNGs (RCDATA 101..108). `src/main.cpp` scales the
+  resting picture once per window size, then draws patches clipped inside their
+  margins, the handle, the screen and the two text lines. Click rectangles and
+  patch rectangles in main.cpp repeat the SVG's coordinates by hand; change
+  both together. Window is 920x412 (was 920x380).
+- Checked under Wine from a scratch copy: resting screenshot, and a scratch-only
+  build with a rocker end and a pad lean forced on (no seams). Mouse input in
+  the real window was not exercised; the owner then ran the Windows build and
+  approved the look. The resvg pictures match the earlier librsvg ones
+  (about 50 dB PSNR). `docs/shell.png` in the README is a Wine `--screenshot`
+  of that build with the empty text rows cropped off (Wine lacks Segoe UI).
+- The earlier ray-marched attempt is parked in ignored `ref/shell-render/`.

@@ -9,6 +9,8 @@ Extracted resources, ARM/Thumb analysis, function dossiers and UI notes live
 alongside the player source. The desktop app uses FFmpeg and Windows audio;
 it reconstructs the interface rather than running the original firmware.
 
+![The desktop player: the GoGear Mix shell with its top controls and the home screen](docs/shell.png)
+
 ![Selected screens rendered by the shared player interface](docs/ui.png)
 
 ## Device and firmware
@@ -82,8 +84,8 @@ templates, never the local music library or station configuration.
 | Left / Backspace / Escape | Back; hold for main menu in ordinary menus |
 | Right / Enter / Space | Select or play/pause |
 | Shift + Up / Down | Seek five seconds; on radio, jump between configured stations |
-| `+` / `-` | Volume; the left-side "- VOL +" rocker has clickable ends |
-| Right edge slider | Left latches Lock; center unlocks; hold spring-return right for power-off |
+| `+` / `-` | Volume; the "- VOL +" rocker on the top surface has clickable ends |
+| Slider on the top surface | Left latches Lock; center unlocks; hold spring-return right for power-off |
 | `L` / hold `P` | Toggle lock / hold power-off |
 | Home | Main menu |
 | `M` | Current-track shortcuts, or radio options |
@@ -91,7 +93,7 @@ templates, never the local music library or station configuration.
 | F5 | Rescan media and reload stations |
 | F9 / F10 | Connected-to-PC / charge-choice previews |
 
-The shell buttons and menu rows are clickable. Held volume and navigation keys
+The marks on the control plate and the menu rows are clickable. Held volume and navigation keys
 repeat; short actions complete on release. Confirmations use Play/OK and
 Back/Cancel; Up/Down does not choose an answer. The M track menu is a desktop
 shortcut, while Music > Playlists follows the recovered original menu.
@@ -124,6 +126,8 @@ diagnostic arguments and Windows test procedure.
 Requirements:
 
 - GNU Make, Python 3 and OpenSSL.
+- A Python environment at `../.venv` with the `resvg-py` package, and the URW
+  Nimbus Sans Bold font, for prerendering the shell drawing.
 - Native `g++` with C++17 support for UI tests.
 - MinGW-w64 `x86_64-w64-mingw32-g++-posix` and `x86_64-w64-mingw32-windres`.
 - A Windows x64 FFmpeg shared SDK under `third_party/ffmpeg/`, with `include/`,
@@ -190,7 +194,8 @@ available for static analysis.
 | [`20261110T141045Z/`](20261110T141045Z/) | Original capture and verification metadata |
 | `src/` | Win32 shell, portable UI, FFmpeg audio, microphone recorder and configuration |
 | `assets/Playlists/` | Clean runtime templates |
-| `tools/` | Asset embedding, host-UI extraction, VMI mapping, packaging and Windows checks |
+| `assets/shell/shell.svg` | The device shell drawing; the build prerenders it with resvg |
+| `tools/` | Asset embedding, shell prerendering, host-UI extraction, VMI mapping, packaging and Windows checks |
 | `tests/` | Native tests of the shared interface |
 | `re/docs/` | Findings, retained evidence and function dossiers |
 | `re/symbols/` | Address/name annotations for the analysis images |
