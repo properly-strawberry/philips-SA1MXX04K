@@ -1,0 +1,12 @@
+0xf71b4	host_ui_initialize	Observed display init and 128x64 clear	F
+0x1051a4	host_ui_redraw	Observed charge-choice or connected-screen rendering	F
+0x1052f2	host_ui_draw_connection_scene	Observed computer 81,17; player 19,26; connection 50,30	F
+0x10536a	host_ui_reset_connection_dots	Observed host bitmap 19 at 50,30	F
+0x105386	host_ui_animate_connection	Observed host bitmap 14+frame at 50,30	F
+0x1053a8	host_ui_update_charge_status	Observed charge-level and battery state updates	F
+0x10541e	host_ui_draw_battery	Observed battery position 110,2 and threshold branches	F
+0x1054c0	host_ui_draw_status_text	Observed bitmap pairs 8/9,10/11,12/13 at 13,50 and 13,56	F
+0x105594	host_gfx_fill_rectangle	Observed RGB565 horizontal chunks	F
+0x10565c	host_gfx_draw_bitmap_id	Observed bitmap pointer table lookup at 0x10c054	F
+0x1056d4	host_gfx_draw_monochrome	Observed monochrome bitmap expansion to display chunks	F
+0x10c054	host_ui_bitmap_table	Observed 48 valid bitmap pointers; separate from RSRC

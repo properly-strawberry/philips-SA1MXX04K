@@ -110,5 +110,7 @@
 
 *.sb    binary
 *.elf   binary
+*.fil   binary
+*.FIL   binary
 # Preserve original capture bytes, including metadata line endings.
 20261110T141045Z/** -text

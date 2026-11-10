@@ -1,0 +1,20 @@
+{
+  "_comment": "Copy stations into radio.json. MHz values are virtual dial positions, not local transmitter frequencies. Stream availability may change.",
+  "stations": [
+    {
+      "mhz": 89.0,
+      "name": "LRT Radijas",
+      "url": "https://stream-live.lrt.lt/radijas/master.m3u8"
+    },
+    {
+      "mhz": 96.3,
+      "name": "LRT Klasika",
+      "url": "https://stream-live.lrt.lt/klasika/master.m3u8"
+    },
+    {
+      "mhz": 102.6,
+      "name": "LRT Opus",
+      "url": "https://stream-live.lrt.lt/opus/master.m3u8"
+    }
+  ]
+}

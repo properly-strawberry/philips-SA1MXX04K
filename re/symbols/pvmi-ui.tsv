@@ -1,0 +1,30 @@
+0x14bf7a	ui_main_thread	Derived: UI initialization and widget registrations	F
+0x14c104	ui_register_app_pages	Derived: app widget class setup	F
+0x14c3a0	ui_set_theme_palette	Observed ABGR theme palette initialization	F
+0x14c400	ui_initialize_fonts	Observed default groups 33/34; configuration flag selects 28/29	F
+0x14c588	ui_root_event_dispatch	Derived root application event handler	F
+0x14d4b8	ui_switch_page_class	Observed page-state to widget-class mapping	F
+0x14ed50	ui_static_menu_paint	Observed centered highlight and checkmark drawing	F
+0x150264	ui_build_menu_label_table	Observed one-based text ID arrays by menu state	F
+0x1505dc	ui_static_menu_create	Observed three text rows, selected row at center	F
+0x152344	ui_folder_browser_paint	Observed folder/highlight/ellipsis resource arguments	F
+0x152934	ui_home_paint	Observed left rail resource at 9,8	F
+0x152982	ui_home_event	Observed category navigation and selection	F
+0x152d3e	ui_home_animation_tick	Observed fade frame advancement 1..5	F
+0x152db4	ui_home_create	Observed five/six categories gated by RAM 0x75a8	F
+0x15d35c	ui_browser_rows_paint	Observed selected center row and normal/selected folder icons	F
+0x148b4c	gfx_draw_text	Observed glyph-width advances with no extra spacing	F
+0x14991e	gfx_fill_rectangle	Observed horizontal-line rectangle fill	F
+0x194c0e	gfx_rgb565_draw_line	Observed ABGR to RGB565 conversion	F
+0x196af8	widget_register_class	Derived vararg class callback registry	F
+0x196db8	widget_create	Derived widget allocation/class constructor path	F
+0x1532e6	ui_playback_event	Observed tap/hold/release playback events	F
+0x1537a6	ui_playback_create	Observed times/progress/counter/status placements	F
+0x153c2c	ui_playback_create_metadata	Observed title and artist/album row placement	F
+0x153296	ui_playback_seek_acceleration	Observed 4/5/10/20 parameter steps at repeat thresholds	F
+0x15458c	ui_radio_event	Observed optional FM event handling	F
+0x154ec0	ui_radio_create	Observed vertical scale and 24-pixel numeric font layout	F
+0x156e66	ui_recording_create	Observed filename/timers/microphone/battery placements	F
+0x157532	ui_recording_event	Observed pause/save and recording state handling	F
+0x15963e	ui_radio_scale_paint	Observed background and arrow placement with percent quantization	F
+0x19707c	ui_format_clock	Observed hour omission and padded minutes/seconds	F

@@ -1,5 +1,8 @@
 # Philips GoGear Mix investigation
 
+Desktop Windows player: [PLAYER.md](PLAYER.md). Crosscompile with `make package`;
+portable output is `dist/philips.exe` with its FFmpeg DLLs, or `dist/philips-win64.zip`.
+
 - Original device capture: `20261110T141045Z/` (keep immutable).
 - Findings and evidence: [re/docs/INITIAL_FINDINGS.md](re/docs/INITIAL_FINDINGS.md).
 - Reproducible extracted sections/ELFs: `gen/sb/`.
