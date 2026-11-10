@@ -55,6 +55,14 @@ services remain adaptations.
 
 ## Controls
 
+- The player starts as a frameless shape floating on the desktop, with nothing
+  around it but its shadow. Drag it by the silver or the glass; drag the small
+  corner mark at its lower right to resize it (it keeps its shape). Right-click
+  the player to swap to an ordinary resizable window with the status lines, and
+  right-click again to go back. The choice is remembered in `philips.ini`.
+- At window sizes where a screen pixel is not a whole number of window pixels,
+  the screen is enlarged 4x and scaled down smoothly so its pixels stay even;
+  at whole multiples (the starting size is 3x) they are left sharp.
 - Click the marks on the control plate, the ends of the rocker, the slider, or
   the screen's menu rows.
 - Up / Down: navigate; while playing, tap for previous / next track or hold

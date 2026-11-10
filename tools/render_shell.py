@@ -7,7 +7,8 @@ Draws with resvg (the resvg-py wheel in the workspace virtual environment):
 
 Output goes to gen/player/shell/ at twice the window's logical size. The rest
 picture is whole; each pressed state is a patch with a margin; the handle is
-cut out alone on a transparent background. The patch rectangles (logical
+cut out alone. All are on a transparent ground: the drawing's dark background
+rectangle is only there for looking at the SVG. The patch rectangles (logical
 pixels) are repeated in src/main.cpp.
 """
 import re
@@ -31,11 +32,12 @@ FONT = Path('/usr/share/fonts/opentype/urw-base35/NimbusSans-Bold.otf')
 
 def render(svg, name, shown, crop=None, scene=True):
     """Draw the picture with the given state groups shown, optionally only a rectangle of it."""
+    svg = svg.replace(BACKGROUND, '')   # the program supplies the ground, or none when the player floats
     for state in STATES:
         marker = f'id="state-{state}"'
         svg = re.sub(re.escape(marker) + r'( display="none")?', marker + ('' if state in shown else ' display="none"'), svg)
     if not scene:
-        svg = svg.replace('<g id="scene">', '<g id="scene" display="none">').replace(BACKGROUND, '')
+        svg = svg.replace('<g id="scene">', '<g id="scene" display="none">')
     if crop:
         x, y, w, h = crop
         svg = svg.replace(SIZE, f'width="{w}" height="{h}" viewBox="{x} {y} {w} {h}"')

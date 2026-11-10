@@ -45,6 +45,8 @@ std::array<bool,256> keyboardHeld{};
 std::array<Key,256> keyboardAction{};
 bool sliderDragging=false,powerKeyDown=false,releasingCapture=false;
 player::SliderMotion sliderMotion;
+// Dragging the frameless player's corner mark: where the pointer and the window were when it began.
+bool resizing=false;POINT resizeFrom{};RECT resizeStart{};
 std::wstring screenshotPath,smokeReport;
 int smokeStep=-1;
 std::vector<std::string> smokeChecks;
@@ -111,7 +113,7 @@ void releaseMouseCapture(HWND hwnd) {
     if(GetCapture()==hwnd){releasingCapture=true;ReleaseCapture();releasingCapture=false;}
 }
 void cancelHeldControls(HWND hwnd,bool releaseCapture) {
-    keyboardHeld.fill(false);powerKeyDown=false;sliderDragging=false;pressed=-1;
+    keyboardHeld.fill(false);powerKeyDown=false;sliderDragging=false;pressed=-1;resizing=false;
     ui->cancelKeys();ui->releaseSlider();
     sliderMotion.release();
     if(releaseCapture)releaseMouseCapture(hwnd);
@@ -183,21 +185,45 @@ void drawArt(Graphics& g,Bitmap* image,RectF where) {
     ImageAttributes edges;edges.SetWrapMode(WrapModeTileFlipXY);
     g.DrawImage(image,where,0,0,REAL(image->GetWidth()),REAL(image->GetHeight()),UnitPixel,&edges);
 }
-void paint(HDC dc,int width,int height) {
-    // Only the parts that move are drawn each frame.
+// By default the player floats on the desktop without a window frame; a right
+// click swaps that for an ordinary window with the status lines, and back.
+bool borderless=true;
+// A 32-bit picture the size of the window that both GDI and GDI+ can reach.
+struct Canvas {
+    HDC dc=nullptr;HBITMAP bitmap=nullptr;HGDIOBJ previous=nullptr;void* bits=nullptr;int w=0,h=0;
+    void ensure(int width,int height) {
+        if(width==w&&height==h&&bitmap)return;
+        release();
+        BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=width;info.bmiHeader.biHeight=-height;
+        info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;info.bmiHeader.biCompression=BI_RGB;
+        dc=CreateCompatibleDC(nullptr);bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&bits,nullptr,0);
+        previous=SelectObject(dc,bitmap);w=width;h=height;
+    }
+    void release() {
+        if(dc){SelectObject(dc,previous);DeleteObject(bitmap);DeleteDC(dc);}
+        dc=nullptr;bitmap=nullptr;bits=nullptr;w=h=0;
+    }
+} playerCanvas,windowCanvas;
+const Rect gripArea(872,336,24,24);   // resize corner of the frameless player, tucked beside the shell's lower right corner
+// Draws the player alone, on a transparent ground, into playerCanvas.
+void drawPlayer(int width,int height,bool grip) {
+    playerCanvas.ensure(width,height);
+    Bitmap target(width,height,width*4,PixelFormat32bppPARGB,static_cast<BYTE*>(playerCanvas.bits));
+    Graphics g(&target);
+    // The resting shell is scaled once per window size; only the parts that move are drawn each frame.
     auto& backdrop=art.backdrop;
     float scale=std::min(float(width)/W,float(height)/H),left=(width-W*scale)/2,top=(height-H*scale)/2;
     if(!backdrop||int(backdrop->GetWidth())!=width||int(backdrop->GetHeight())!=height) {
         backdrop=std::make_unique<Bitmap>(width,height,PixelFormat32bppPARGB);
-        Graphics b(backdrop.get());b.Clear(Color(255,24,27,33));
+        Graphics b(backdrop.get());b.Clear(Color(0,0,0,0));
         b.SetInterpolationMode(InterpolationModeHighQualityBicubic);b.SetPixelOffsetMode(PixelOffsetModeHalf);
         drawArt(b,art.base.get(),RectF(left,top,W*scale,H*scale));
     }
-    Graphics g(dc);g.SetCompositingMode(CompositingModeSourceCopy);g.DrawImage(backdrop.get(),0,0,width,height);
-    g.SetCompositingMode(CompositingModeSourceOver);g.SetSmoothingMode(SmoothingModeAntiAlias);
+    g.SetCompositingMode(CompositingModeSourceCopy);g.DrawImage(backdrop.get(),0,0,width,height);
+    g.SetSmoothingMode(SmoothingModeAntiAlias);
     g.TranslateTransform(left,top);g.ScaleTransform(scale,scale);
     g.SetInterpolationMode(InterpolationModeHighQualityBicubic);g.SetPixelOffsetMode(PixelOffsetModeHalf);
-    // Each patch has a margin identical to the resting picture; clipping inside it leaves no seam.
+    // Each patch has a margin identical to the resting picture; replacing the pixels inside it leaves no seam.
     auto patch=[&](Bitmap* image,RectF where) {
         auto saved=g.Save();g.SetClip(RectF(where.X+3,where.Y+3,where.Width-6,where.Height-6));
         drawArt(g,image,where);g.Restore(saved);
@@ -206,23 +232,90 @@ void paint(HDC dc,int width,int height) {
     if(minus!=plus)patch((minus?art.rockerMinus:art.rockerPlus).get(),rockerPatch);
     static constexpr int padFor[]={0,2,-1,3,1};   // body button -> up, back, (slider), play, down
     if(pressed>=0&&pressed<=4&&padFor[pressed]>=0)patch(art.pad[padFor[pressed]].get(),padPatch);
+    g.SetCompositingMode(CompositingModeSourceOver);
     auto groove=buttons[2];float travel=(groove.w-4)/3.0f;
     drawArt(g,art.handle.get(),RectF(handlePatch.X+(sliderMotion.position()-.5f)*travel,handlePatch.Y,handlePatch.Width,handlePatch.Height));
     renderScreen();
-    Bitmap bitmap(128,64,128*4,PixelFormat32bppARGB,reinterpret_cast<BYTE*>(screen.data()));
-    g.SetInterpolationMode(InterpolationModeNearestNeighbor);
-    g.DrawImage(&bitmap,lcdArea,0,0,128,64,UnitPixel);
+    float zoom=lcdArea.Width*scale/128;
+    if(zoom>=1&&std::abs(zoom-std::round(zoom))<.002f) {
+        // A whole number of window pixels per screen pixel: keep them square and sharp.
+        Bitmap bitmap(128,64,128*4,PixelFormat32bppARGB,reinterpret_cast<BYTE*>(screen.data()));
+        g.SetInterpolationMode(InterpolationModeNearestNeighbor);
+        g.DrawImage(&bitmap,lcdArea,0,0,128,64,UnitPixel);
+    } else {
+        // Otherwise enlarge the screen 4x first and scale that down smoothly, so
+        // its pixels stay even instead of some coming out wider than others.
+        static std::array<uint32_t,512*256> large;
+        for(int y=0;y<256;y++)for(int x=0;x<512;x++)large[size_t(y)*512+x]=screen[size_t(y/4)*128+x/4];
+        Bitmap bitmap(512,256,512*4,PixelFormat32bppARGB,reinterpret_cast<BYTE*>(large.data()));
+        ImageAttributes edges;edges.SetWrapMode(WrapModeTileFlipXY);
+        g.DrawImage(&bitmap,lcdArea,0,0,512,256,UnitPixel,&edges);
+    }
     g.SetPixelOffsetMode(PixelOffsetModeDefault);
+    if(grip) {
+        // A faint corner to drag. Its backing is all but invisible, yet enough for the corner to take clicks.
+        SolidBrush backing(Color(3,0,0,0));g.FillRectangle(&backing,gripArea);
+        Pen line(Color(170,160,172,186),1.6f);float right=float(gripArea.X+gripArea.Width-3),bottom=float(gripArea.Y+gripArea.Height-3);
+        for(int i=1;i<=3;i++)g.DrawLine(&line,right-i*5,bottom,right,bottom-i*5);
+    }
+}
+// The framed window: the player on the dark ground, with the two status lines.
+void composeWindow(int width,int height) {
+    drawPlayer(width,height,false);
+    windowCanvas.ensure(width,height);
+    Bitmap target(width,height,width*4,PixelFormat32bppRGB,static_cast<BYTE*>(windowCanvas.bits));
+    Bitmap player(width,height,width*4,PixelFormat32bppPARGB,static_cast<BYTE*>(playerCanvas.bits));
+    Graphics g(&target);g.Clear(Color(255,24,27,33));g.DrawImage(&player,0,0,width,height);
+    float scale=std::min(float(width)/W,float(height)/H);
+    g.TranslateTransform((width-W*scale)/2,(height-H*scale)/2);g.ScaleTransform(scale,scale);
+    g.SetTextRenderingHint(TextRenderingHintAntiAlias);
     auto info=audio->snapshot();
     std::wstring status=info.playing?(info.paused?L"Paused":L"Playing"):L"Music lives beside philips.exe";
     if(!info.error.empty())status=info.error;
     else if(info.playing)status+=L"  ·  "+trackTitle(info);
     label(g,40,H-44,W-80,19,status.c_str(),12,Color(255,170,183,197));
-    label(g,40,H-24,W-80,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume   ·   P: hold power",11,Color(255,111,126,143));
+    label(g,40,H-24,W-80,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume   ·   P: hold power   ·   Right click: frameless",11,Color(255,111,126,143));
+}
+void paint(HDC dc,int width,int height) {
+    composeWindow(width,height);
+    BitBlt(dc,0,0,width,height,windowCanvas.dc,0,0,SRCCOPY);
+}
+// The frameless player is a layered window: Windows blends the picture's own transparency with the desktop.
+void presentFloating(HWND hwnd) {
+    RECT r;GetWindowRect(hwnd,&r);int width=r.right-r.left,height=r.bottom-r.top;
+    if(width<1||height<1||IsIconic(hwnd))return;
+    drawPlayer(width,height,true);
+    POINT origin{0,0};SIZE size{width,height};BLENDFUNCTION blend{AC_SRC_OVER,0,255,AC_SRC_ALPHA};
+    UpdateLayeredWindow(hwnd,nullptr,nullptr,&size,playerCanvas.dc,&origin,0,&blend,ULW_ALPHA);
+}
+void refresh(HWND hwnd) { if(borderless)presentFloating(hwnd);else InvalidateRect(hwnd,nullptr,FALSE); }
+constexpr DWORD floatingStyle=WS_POPUP|WS_SYSMENU|WS_MINIMIZEBOX,framedStyle=WS_OVERLAPPEDWINDOW;
+// Swaps between the two kinds of window. The player keeps its size and its
+// place on the desktop; the window around it is what changes.
+void setBorderless(HWND hwnd,bool on) {
+    if(IsZoomed(hwnd))ShowWindow(hwnd,SW_RESTORE);
+    // Where the picture of the player is now, in screen coordinates.
+    RECT client;GetClientRect(hwnd,&client);POINT corner{0,0};ClientToScreen(hwnd,&corner);
+    float scale=std::min(float(client.right)/W,float(client.bottom)/H);
+    int width=std::max(1,int(std::lround(W*scale))),height=std::max(1,int(std::lround(H*scale)));
+    RECT want{corner.x+(client.right-width)/2,corner.y+(client.bottom-height)/2,0,0};
+    want.right=want.left+width;want.bottom=want.top+height;
+    borderless=on;DWORD style=on?floatingStyle:framedStyle,extended=on?WS_EX_LAYERED:0;
+    SetWindowLongPtrW(hwnd,GWL_STYLE,style|WS_VISIBLE);SetWindowLongPtrW(hwnd,GWL_EXSTYLE,extended);
+    RECT outer=want;AdjustWindowRectEx(&outer,style,FALSE,extended);
+    for(int pass=0;pass<2;pass++) {
+        SetWindowPos(hwnd,nullptr,outer.left,outer.top,outer.right-outer.left,outer.bottom-outer.top,SWP_NOZORDER|SWP_FRAMECHANGED);
+        // Trust what the window actually became, not the prediction: correct any difference once.
+        RECT got;GetClientRect(hwnd,&got);POINT at{0,0};ClientToScreen(hwnd,&at);
+        if(at.x==want.left&&at.y==want.top&&got.right==width&&got.bottom==height)break;
+        outer.left+=want.left-at.x;outer.top+=want.top-at.y;
+        outer.right+=want.left-at.x+(width-got.right);outer.bottom+=want.top-at.y+(height-got.bottom);
+    }
+    if(on)presentFloating(hwnd);else RedrawWindow(hwnd,nullptr,nullptr,RDW_INVALIDATE|RDW_FRAME|RDW_UPDATENOW);
 }
 void saveScreenshot(const std::wstring& path) {
-    Bitmap bitmap(W,H,PixelFormat32bppARGB);Graphics graphics(&bitmap);
-    HDC dc=graphics.GetHDC();paint(dc,W,H);graphics.ReleaseHDC(dc);
+    composeWindow(W,H);
+    Bitmap bitmap(W,H,W*4,PixelFormat32bppRGB,static_cast<BYTE*>(windowCanvas.bits));
     UINT size=0,count=0;GetImageEncodersSize(&count,&size);std::vector<BYTE> buffer(size);
     auto* enc=reinterpret_cast<ImageCodecInfo*>(buffer.data());GetImageEncoders(count,size,enc);
     for(UINT i=0;i<count;i++)if(wcscmp(enc[i].MimeType,L"image/png")==0){bitmap.Save(path.c_str(),&enc[i].Clsid,nullptr);break;}
@@ -260,7 +353,7 @@ void saveSettings() {
     ui->remember();
     auto ini=appDir/L"philips.ini";auto& s=ui->settings;
     auto write=[&](const wchar_t* key,int value){WritePrivateProfileStringW(L"Player",key,std::to_wstring(value).c_str(),ini.c_str());};
-    write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
+    write(L"Borderless",borderless);write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
     write(L"Repeat",s.repeat);write(L"Shuffle",s.shuffle);write(L"Equalizer",s.equalizer);write(L"Backlight",s.backlight);write(L"ScreenOff",s.screenOff);write(L"Rotation",s.rotation);
     for(int i=0;i<5;i++)write((L"Band"+std::to_wstring(i)).c_str(),int(s.bands[i]));
     WritePrivateProfileStringW(L"Player",L"LastPlayed",ui->lastPlayed.c_str(),ini.c_str());write(L"ResumeSeconds",int(ui->resumePosition));
@@ -296,7 +389,7 @@ void smokeTick() {
 LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     switch(msg) {
     case WM_CREATE:SetTimer(hwnd,1,33,nullptr);return 0;
-    case WM_GETMINMAXINFO:{auto* i=reinterpret_cast<MINMAXINFO*>(lp);i->ptMinTrackSize={700,320};return 0;}
+    case WM_GETMINMAXINFO:{auto* i=reinterpret_cast<MINMAXINFO*>(lp);i->ptMinTrackSize={W/2,H/2};return 0;}
     case ScanDone:{std::lock_guard<std::mutex> l(libraryMutex);ui->setLibrary(std::move(scanResult));return 0;}
     case WM_TIMER: {
         auto time=GetTickCount64();
@@ -307,7 +400,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         if(closing&&ui->shutdownFinished()){DestroyWindow(hwnd);return 0;}
         if(smokeStep>=0&&smokeStep<101)smokeTick();
         else if(smokeStep<0&&!screenshotPath.empty()&&time-started>8200&&!closing){saveScreenshot(screenshotPath);PostMessageW(hwnd,WM_CLOSE,0,0);}
-        InvalidateRect(hwnd,nullptr,FALSE);return 0;
+        refresh(hwnd);return 0;
     }
     case WM_KEYDOWN:
         if(closing)return 0;
@@ -339,6 +432,13 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         if(closing)return 0;
         auto point=playerPoint(hwnd,lp);float x=point.X,y=point.Y;
         int button=buttonAt(x,y);bool alreadyHeld=button>=0&&button!=2&&keyHeld(bodyKey(button));
+        if(borderless&&button<0&&!(x>=lcdArea.X&&x<lcdArea.X+lcdArea.Width&&y>=lcdArea.Y&&y<lcdArea.Y+lcdArea.Height)) {
+            // No frame to hold it by: the corner resizes, the rest of the shell drags.
+            bool corner=x>=gripArea.X&&x<gripArea.X+gripArea.Width&&y>=gripArea.Y&&y<gripArea.Y+gripArea.Height;
+            // A frameless window has no sizing border for Windows to drag, so the corner is followed by hand.
+            if(corner){resizing=true;GetCursorPos(&resizeFrom);GetWindowRect(hwnd,&resizeStart);SetCapture(hwnd);return 0;}
+            ReleaseCapture();SendMessageW(hwnd,WM_NCLBUTTONDOWN,HTCAPTION,0);return 0;
+        }
         pressed=button;pressedAt=GetTickCount64();SetCapture(hwnd);
         if(pressed==2){sliderDragging=true;ui->moveSlider(sliderMotion.press(sliderPointer(x),sliderHandleAt(x)));}
         else if(pressed>=0){if(!alreadyHeld)ui->pressKey(bodyKey(pressed));}
@@ -346,16 +446,25 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         return 0;
     }
     case WM_MOUSEMOVE:
+        if(resizing) {
+            if(!(wp&MK_LBUTTON)){resizing=false;releaseMouseCapture(hwnd);return 0;}
+            // The mark sits a little inside the window's right edge; scale the pointer's travel so it stays under the pointer.
+            POINT now;GetCursorPos(&now);float reach=(gripArea.X+gripArea.Width/2.0f)/W;
+            int width=std::max(W/2,int(std::lround(resizeStart.right-resizeStart.left+(now.x-resizeFrom.x)/reach)));
+            SetWindowPos(hwnd,nullptr,0,0,width,int(std::lround(width*double(H)/W)),SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+            return 0;
+        }
         if(sliderDragging&&!closing) {
             if(!(wp&MK_LBUTTON)){cancelHeldControls(hwnd,true);return 0;}
             auto point=playerPoint(hwnd,lp);
             auto groove=buttons[2];
             if(point.Y>=groove.y-8&&point.Y<groove.y+groove.h+8)ui->moveSlider(sliderMotion.drag(sliderPointer(point.X)));
             else {ui->releaseSlider();sliderMotion.release();sliderDragging=false;}
-            InvalidateRect(hwnd,nullptr,FALSE);
+            refresh(hwnd);
         }
         return 0;
     case WM_LBUTTONUP: {
+        if(resizing){resizing=false;releaseMouseCapture(hwnd);return 0;}
         int button=pressed;bool wasSlider=sliderDragging;pressed=-1;sliderDragging=false;
         if(wasSlider){sliderMotion.release();if(!powerKeyDown)ui->releaseSlider();}
         else if(button>=0&&button!=2){Key key=bodyKey(button);if(!keyHeld(key))ui->releaseKey(key);}
@@ -363,7 +472,16 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     }
     case WM_CAPTURECHANGED:if(!releasingCapture)cancelHeldControls(hwnd,false);return 0;
     case WM_ERASEBKGND:return 1;
-    case WM_PAINT:{PAINTSTRUCT p;HDC dc=BeginPaint(hwnd,&p);RECT r;GetClientRect(hwnd,&r);HDC mem=CreateCompatibleDC(dc);HBITMAP bitmap=CreateCompatibleBitmap(dc,std::max(1L,r.right),std::max(1L,r.bottom));auto old=SelectObject(mem,bitmap);paint(mem,r.right,r.bottom);BitBlt(dc,0,0,r.right,r.bottom,mem,0,0,SRCCOPY);SelectObject(mem,old);DeleteObject(bitmap);DeleteDC(mem);EndPaint(hwnd,&p);return 0;}
+    case WM_PAINT:{PAINTSTRUCT p;HDC dc=BeginPaint(hwnd,&p);RECT r;GetClientRect(hwnd,&r);if(!borderless&&r.right>0&&r.bottom>0)paint(dc,r.right,r.bottom);EndPaint(hwnd,&p);return 0;}
+    case WM_RBUTTONUP:if(!closing){cancelHeldControls(hwnd,true);setBorderless(hwnd,!borderless);}return 0;
+    case WM_SIZING:
+        if(borderless) {
+            // The frameless player keeps its shape: height follows width.
+            auto* r=reinterpret_cast<RECT*>(lp);int width=std::max(int(r->right-r->left),W/2);
+            r->right=r->left+width;r->bottom=r->top+int(std::lround(width*double(H)/W));return TRUE;
+        }
+        break;
+    case WM_SIZE:if(borderless&&wp!=SIZE_MINIMIZED)presentFloating(hwnd);break;
     case WM_CLOSE:if(!closing){cancelHeldControls(hwnd,true);if(smokeStep<0)saveSettings();recorder.finish(true);audio->stop();ui->shutdown();closing=true;}return 0;
     case WM_DESTROY:KillTimer(hwnd,1);PostQuitMessage(0);return 0;
     }
@@ -388,13 +506,15 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     if(!fs::exists(layoutDir/L"Playlists"/L"Playlist-on-the-Go.m3u8"))atomicText(layoutDir/L"Playlists"/L"Playlist-on-the-Go.m3u8","#EXTM3U\n");
     audio=std::make_unique<Audio>();ui=std::make_unique<player::Interface>(backend,musicDir);ui->tick(GetTickCount64());loadSettings();
     ULONG_PTR token;GdiplusStartupInput startup;GdiplusStartup(&token,&startup,nullptr);
-    if(!loadShell()){MessageBoxW(nullptr,L"The shell artwork inside philips.exe is missing or damaged.",L"GoGear Mix",MB_ICONERROR);ui.reset();audio.reset();art={};GdiplusShutdown(token);return 1;}
+    if(!loadShell()){MessageBoxW(nullptr,L"The shell artwork inside philips.exe is missing or damaged.",L"GoGear Mix",MB_ICONERROR);ui.reset();audio.reset();art={};playerCanvas.release();windowCanvas.release();GdiplusShutdown(token);return 1;}
     WNDCLASSW klass{};klass.lpfnWndProc=procedure;klass.hInstance=instance;klass.lpszClassName=L"PhilipsGoGearMix";klass.hCursor=LoadCursor(nullptr,IDC_ARROW);klass.hIcon=LoadIconW(instance,MAKEINTRESOURCEW(1));RegisterClassW(&klass);
-    RECT bounds{0,0,W,H};AdjustWindowRect(&bounds,WS_OVERLAPPEDWINDOW,FALSE);started=GetTickCount64();
-    window=CreateWindowExW(0,klass.lpszClassName,L"Philips GoGear Mix",WS_OVERLAPPEDWINDOW,CW_USEDEFAULT,CW_USEDEFAULT,bounds.right-bounds.left,bounds.bottom-bounds.top,nullptr,nullptr,instance,nullptr);
-    if(!window){ui.reset();audio.reset();art={};GdiplusShutdown(token);return 1;}
-    ShowWindow(window,show);beginScan();MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
-    scanStop=true;if(scanner.joinable())scanner.join();recorder.finish(true);ui.reset();audio.reset();art={};GdiplusShutdown(token);
+    borderless=iniInt(L"Borderless",1,0,1)!=0;
+    DWORD style=borderless?floatingStyle:framedStyle,extended=borderless?WS_EX_LAYERED:0;
+    RECT bounds{0,0,W,H};AdjustWindowRectEx(&bounds,style,FALSE,extended);started=GetTickCount64();
+    window=CreateWindowExW(extended,klass.lpszClassName,L"Philips GoGear Mix",style,CW_USEDEFAULT,CW_USEDEFAULT,bounds.right-bounds.left,bounds.bottom-bounds.top,nullptr,nullptr,instance,nullptr);
+    if(!window){ui.reset();audio.reset();art={};playerCanvas.release();windowCanvas.release();GdiplusShutdown(token);return 1;}
+    ShowWindow(window,show);if(borderless)presentFloating(window);beginScan();MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
+    scanStop=true;if(scanner.joinable())scanner.join();recorder.finish(true);ui.reset();audio.reset();art={};playerCanvas.release();windowCanvas.release();GdiplusShutdown(token);
     if(smokeStep>=0)return std::any_of(smokeChecks.begin(),smokeChecks.end(),[](auto& s){return s.rfind("FAIL",0)==0;})?1:0;
     return 0;
 }

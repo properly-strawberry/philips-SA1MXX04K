@@ -87,6 +87,8 @@ templates, never the local music library or station configuration.
 | `+` / `-` | Volume; the "- VOL +" rocker on the top surface has clickable ends |
 | Slider on the top surface | Left latches Lock; center unlocks; hold spring-return right for power-off |
 | `L` / hold `P` | Toggle lock / hold power-off |
+| Right click | Swap between the frameless floating player and an ordinary window |
+| Drag the shell / its lower-right corner mark | Move / resize the frameless player |
 | Home | Main menu |
 | `M` | Current-track shortcuts, or radio options |
 | `S` / `R` | Shuffle / cycle repeat modes |

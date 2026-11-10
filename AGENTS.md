@@ -519,4 +519,19 @@ minus and plus are raised, the two signs only.
   approved the look. The resvg pictures match the earlier librsvg ones
   (about 50 dB PSNR). `docs/shell.png` in the README is a Wine `--screenshot`
   of that build with the empty text rows cropped off (Wine lacks Segoe UI).
+- Frameless by default (owner's request): a layered window (`WS_POPUP`,
+  `WS_EX_LAYERED`, `UpdateLayeredWindow` with the picture's own alpha) showing
+  only the player and its shadow, presented from the timer. Dragging the shell
+  moves it; a corner mark beside the lower right corner resizes it at fixed
+  shape (`WM_SIZING`). Right click swaps to the framed window with the status
+  lines and back; `Borderless` in philips.ini remembers it. The prerendered
+  pictures are therefore transparent; the SVG's dark rectangle is stripped.
+  Off whole multiples the screen is enlarged 4x and scaled down smoothly.
+  The corner is followed by hand (capture + `SetWindowPos`): a frameless
+  window has no sizing border, so `HTBOTTOMRIGHT` did nothing for the owner.
+  The swap keeps the player's picture at the same screen rectangle and
+  corrects itself from the client rectangle it actually got.
+  Under Wine, with a throwaway helper: the swap held the client rectangle
+  in both directions, and a corner drag with `SendInput` resized 892 -> 996.
+  Sent mouse messages are not a valid test of the drag; use real input.
 - The earlier ray-marched attempt is parked in ignored `ref/shell-render/`.
