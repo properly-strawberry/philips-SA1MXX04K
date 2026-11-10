@@ -387,3 +387,13 @@ classification is still broad, so not every failure caption is accurate.
 Native tests inject all failure families and compare every screen pixel in
 all three themes, checking priority, rotation, wake and recovery. Windows is
 crosscompiled; sandboxed Wine still cannot start for a runtime check.
+
+### Desktop sorting preference
+
+Folder browsing places directories before files and compares both names without
+regard to case. Artist/album lists use the same comparison. Windows uses Unicode
+CompareStringOrdinal with ignore-case enabled; native tests use the environment's
+wide-character locale. Exact spelling breaks otherwise equal comparisons, so
+distinct metadata groups remain reachable. Saved playlist order is preserved.
+This is the owner's desktop preference, not a newly recovered firmware rule.
+Native sorting checks also exercise folder Back restoration and queue order.

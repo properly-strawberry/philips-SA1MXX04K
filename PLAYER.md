@@ -72,7 +72,9 @@ services remain adaptations.
   screen rotation, language, information and a settings-only factory reset.
 
 All songs scans Music recursively. Artists and Albums use FFmpeg metadata.
-Folder view browses individual directories.
+Folder view browses individual directories, with folders first and both folders
+and files sorted alphabetically without regard to case. Artist and album lists
+also sort without regard to case. Playlists retain their saved order.
 Back from playback restores the list's remembered selection. If A was selected
 when playback opened, advancing to B does not move that saved cursor to B.
 The traced firmware return path behaves this way too; details are in

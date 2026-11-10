@@ -5,9 +5,16 @@
 #include <cmath>
 #include <fstream>
 #include <iomanip>
+#include <locale>
 #include <random>
 #include <set>
 #include <sstream>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 namespace player {
 // Preserve the physical five-dot rail; the requested internet radio is a sixth stop.
@@ -15,6 +22,23 @@ static constexpr std::array<int,6> homeFamilies={0,2,3,4,5,1};
 static constexpr uint64_t shutdownHold=1000,shutdownFrame=500,shutdownDuration=shutdownHold+7*shutdownFrame;
 static int volumeLevel(int percent){return std::clamp((percent*31+50)/100,0,31);}
 static int volumePercent(int level){return (std::clamp(level,0,31)*100+15)/31;}
+// Ignore case for browsing; retain distinct spellings with a deterministic tie.
+static bool nameLess(const std::wstring& a,const std::wstring& b) {
+#ifdef _WIN32
+    int order=CompareStringOrdinal(a.c_str(),-1,b.c_str(),-1,TRUE);
+    if(order==CSTR_LESS_THAN)return true;
+    if(order==CSTR_GREATER_THAN)return false;
+#else
+    static const std::locale locale("");
+    const auto& letters=std::use_facet<std::ctype<wchar_t>>(locale);
+    for(size_t i=0;i<std::min(a.size(),b.size());i++) {
+        auto left=letters.toupper(a[i]),right=letters.toupper(b[i]);
+        if(left!=right)return left<right;
+    }
+    if(a.size()!=b.size())return a.size()<b.size();
+#endif
+    return a<b;
+}
 static std::wstring timeText(double seconds) {
     int s=std::max(0,int(seconds));auto two=[](int n){return(n<10?L"0":L"")+std::to_wstring(n);};return(s>=3600?std::to_wstring(s/3600)+L":"+two(s/60%60):std::to_wstring(s/60))+L":"+two(s%60);
 }
@@ -138,7 +162,7 @@ std::vector<Interface::Item> Interface::items() {
     case Page::Music:
         open(14,Page::Songs);open(15,Page::Artists);open(16,Page::Albums);open(17,Page::Playlists);break;
     case Page::Artists:case Page::Albums: {
-        std::set<std::wstring> names;bool artists=frame_.page==Page::Artists;
+        std::set<std::wstring,decltype(&nameLess)> names(nameLess);bool artists=frame_.page==Page::Artists;
         bool authors=artists&&frame_.groupMode==5;
         for(auto& s:library)if(s.path.parent_path()!=voice_&&(!authors||isBook(s.path)))names.insert(artists?s.tags.artist:s.tags.album);
         for(auto name:names)rows.push_back({name.empty()?L"Unknown":name,[this,name,artists,authors]{navigate(Page::Group);frame_.group=name;frame_.groupMode=authors?5:artists?1:2;}});
@@ -154,7 +178,7 @@ std::vector<Interface::Item> Interface::items() {
             std::error_code e;if(it->is_symlink(e))continue;
             bool dir=it->is_directory(e);if(dir||isAudio(it->path()))cachedFiles_.emplace_back(it->path(),dir);
         }
-        std::sort(cachedFiles_.begin(),cachedFiles_.end(),[](auto& a,auto& b){return a.second!=b.second?a.second:a.first.filename()<b.first.filename();});
+        std::sort(cachedFiles_.begin(),cachedFiles_.end(),[](const auto& a,const auto& b){return a.second!=b.second?a.second:nameLess(a.first.filename().wstring(),b.first.filename().wstring());});
         cachedDirectory_=frame_.directory;
         }
         auto paths=std::make_shared<std::vector<fs::path>>();for(auto& f:cachedFiles_)if(!f.second)paths->push_back(f.first);
