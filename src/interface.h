@@ -125,6 +125,8 @@ private:
     void drawVolume(bool editing);
     void drawMetadata(const std::wstring& artist,const std::wstring& album,uint32_t color);
     void drawTitle(const std::wstring& value,uint32_t color);
+    void beginDialog();
+    void drawMessage(const std::vector<std::pair<int,std::wstring>>& rows,uint32_t color);
     void tune(int delta,bool preset=false);
     void notice(std::wstring value,int milliseconds=1600);
     void confirm(std::wstring value,std::function<void()> yes,bool restore=false);

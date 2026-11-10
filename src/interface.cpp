@@ -263,7 +263,7 @@ void Interface::select() {
         }
         return;
     }
-    if(frame_.page==Page::Playing){auto info=backend_.audio();if(info.finished&&queueIndex_>=0)playQueue(queue_,queueIndex_);else backend_.pause();return;}
+    if(frame_.page==Page::Playing){auto info=backend_.audio();if(!info.error.empty())return;if(info.finished&&queueIndex_>=0)playQueue(queue_,queueIndex_);else backend_.pause();return;}
     if(frame_.page==Page::Radio){navigate(Page::RadioOptions);return;}
     if(frame_.page==Page::Recording){auto r=backend_.recording();if(!r.error.empty()){back();return;}backend_.recordPause(!r.paused);return;}
     if(frame_.page==Page::CustomEQ){settings.equalizer=7;applySettings();if(frame_.selected<4)frame_.selected++;else back();return;}
@@ -356,6 +356,7 @@ void Interface::input(Key key) {
     int delta=(key==Key::Previous||key==Key::Up||key==Key::SeekBack)?-1:1;
     if(frame_.page==Page::Radio) {tune(delta,key==Key::SeekBack||key==Key::SeekForward);return;}
     if(frame_.page==Page::Playing) {
+        if(!backend_.audio().error.empty()&&(key==Key::SeekBack||key==Key::SeekForward))return;
         if(key==Key::SeekBack||key==Key::SeekForward){auto info=backend_.audio();if(info.duration>0)backend_.seek(std::clamp(info.position+delta*5,0.0,std::max(0.0,info.duration-.05)));}
         else next(delta);
         return;
@@ -369,7 +370,7 @@ void Interface::input(Key key) {
     move(delta);
 }
 void Interface::pressTransport(int direction) {
-    if(frame_.page!=Page::Playing||locked||booting_||updating_||blank_||dim_){input(direction<0?Key::Previous:Key::Next);return;}
+    if(frame_.page!=Page::Playing||locked||booting_||updating_||blank_||dim_||!backend_.audio().error.empty()){input(direction<0?Key::Previous:Key::Next);return;}
     if(transportDirection_==direction)return;
     lockUntil_=0;
     transportDirection_=direction;transportPressed_=transportTick_=lastInput_=now_;transportRepeats_=0;
@@ -485,13 +486,22 @@ void Interface::drawMetadata(const std::wstring& artist,const std::wstring& albu
     clip_={0,0,128,64};
 }
 void Interface::drawVolume(bool editing) {
-    screen.fill(0xff000000|background());int position=volumeLevel(editing?std::max(0,limitDraft_):settings.volume),limit=volumeLevel(settings.volumeLimit);
+    beginDialog();int position=volumeLevel(editing?std::max(0,limitDraft_):settings.volume),limit=volumeLevel(settings.volumeLimit);
     for(int i=0;i<position;i++)if(i!=limit)image(4*256,17+i*3,26);
     for(int i=position+1;i<32;i++)if(i!=limit)image(4*256+1+settings.theme,17+i*3,26);
     image(4*256+4,14+position*3,21);image(4*256+8,17+limit*3,21);
     if(position)image(4*256+6,1,26);
     image(4*256+(position<(editing?31:limit)?7:5),115,26);
     if(editing)center(51,tr(131),settings.theme==2?firmwareColor(0xffead3fc):0xffffff);
+}
+void Interface::beginDialog() {clip_={0,0,128,64};screen.fill(0xff000000|background());}
+void Interface::drawMessage(const std::vector<std::pair<int,std::wstring>>& rows,uint32_t color) {
+    // All text dialogs use the full bounds of firmware class 0x1020.
+    // Reset the clip too: a previous marquee/metadata viewport must not survive.
+    beginDialog();
+    // Property 0x109=1 centers the 12-pixel font inside each 14-pixel row.
+    for(const auto& row:rows){clip_={4,std::max(0,row.first),124,std::min(64,row.first+14)};if(textWidth(row.second)>120)marquee(4,row.first+1,row.second,color,120);else center(row.first+1,row.second,color);}
+    clip_={0,0,128,64};
 }
 void Interface::status(const TrackInfo& info) {
     image(2*256+(transportRepeats_&&transportDirection_?(transportDirection_<0?1:3):info.paused?4:info.playing?5:2),5,35);
@@ -528,13 +538,17 @@ void Interface::render() {
         number(18,37,timeText(info.position),0xffffff);number(83,37,timeText(info.duration),0xffffff,false,2,40);
         const uint32_t progressColors[]={0xff2d2d2d,0xffa87455,0xffa390e9};rect(5,48,118,2,firmwareColor(progressColors[settings.theme]));if(info.duration>0)rect(5,48,118*int(100*std::clamp(info.position/info.duration,0.0,1.0))/100,2,0xffffff);
         status(info);
-        if(!info.error.empty()){rect(0,16,128,36,background());center(17,tr(101),fg);center(32,tr(102),fg);}
+        if(!info.error.empty()){
+            if(settings.language==21)drawMessage({{6,tr(101)},{25,tr(102)},{44,tr(103)}},fg);
+            else drawMessage({{12,tr(101)},{40,tr(102)}},fg);
+        }
     } else if(frame_.page==Page::Radio) {
         auto color=settings.theme==2?firmwareColor(primary[2]):0xffffff;
         image(2*256+24+settings.theme,5,0);image(2*256+27+settings.theme,10,55-((frequency_-875)*100/205)*55/100);image(1*256+4,107,51);
         std::wostringstream frequency;frequency<<std::fixed<<std::setprecision(1)<<frequency_/10.0;number(26,20,frequency.str(),color,2,1,75);text(106,25,L"FM",color,true);
         std::wstring name=radioCandidate_>=0?stations[radioCandidate_].name:radioCandidate_==-2?tr(61):L"--";
-        marquee(26,47,info.error.empty()?name:L"Unavailable",color,75);
+        if(info.error.empty())marquee(26,47,name,color,75);
+        else drawMessage({{25,L"Unavailable"}},fg);
     } else if(frame_.page==Page::Recording) {
         auto record=backend_.recording();marquee(5,13,record.path.filename().wstring(),firmwareColor(primary[settings.theme]),118,true);
         image(2*256+(record.paused?4:0),5,35);number(18,37,timeText(record.seconds),0xffffff);
@@ -542,7 +556,7 @@ void Interface::render() {
         number(73,37,timeText(remaining),0xffffff,false,2,50);
         const uint32_t progressColors[]={0xff2d2d2d,0xffa87455,0xffa390e9};rect(5,48,118,2,firmwareColor(progressColors[settings.theme]));rect(5,48,int(118*record.seconds/std::max(1.0,record.seconds+remaining)),2,0xffffff);
         image(3*256+28,5,52);image(1*256+4,107,51);
-        if(!record.error.empty()){screen.fill(0xff000000|background());center(10,L"Microphone",fg);center(27,L"unavailable",fg);}
+        if(!record.error.empty())drawMessage({{12,L"Microphone"},{40,L"unavailable"}},fg);
     } else if(frame_.page==Page::CustomEQ) {
         image(6*256+settings.theme,0,0);
         image(6*256+4+settings.theme,12+frame_.selected*22,0);
@@ -563,11 +577,11 @@ void Interface::render() {
         image(1*256+4,111,0);image(9*256+settings.language*2+std::min(1,frame_.selected),0,20);
     } else if(frame_.page==Page::Confirm) {
         // Dialog 0x1020 kind 1: centered prompt rows and fixed key captions.
-        for(const auto& row:promptRows_){clip_={4,std::max(0,row.first),124,std::min(64,row.first+14)};if(textWidth(row.second)>120)marquee(4,row.first,row.second,fg,120);else center(row.first,row.second,fg);}
+        drawMessage(promptRows_,fg);
         bool wide=settings.language==18||settings.language==19||settings.language==20||settings.language==23;
         int split=wide?66:86;
-        clip_={2,49,split-1,63};text(2,49,tr(restorePrompt_?203:201),0xffffff);
-        clip_={split,49,126,63};auto cancel=tr(202);text(126-textWidth(cancel),49,cancel,0xffffff);
+        clip_={2,49,split-1,63};text(2,50,tr(restorePrompt_?203:201),0xffffff);
+        clip_={split,49,126,63};auto cancel=tr(202);text(126-textWidth(cancel),50,cancel,0xffffff);
         clip_={0,0,128,64};
     } else {
         auto rows=items();
@@ -586,6 +600,7 @@ void Interface::render() {
             if(rows[index].checked)image(3*256+2+(selected?settings.theme:3),107,y);
         }
         if(rows.empty()) {
+            beginDialog();
             if(scanning){image(5*256+unsigned((now_/90)%8),57,8);center(30,tr(228),fg);}
             else {center(19,frame_.page==Page::Recorded?tr(82):tr(99),fg);if(frame_.page==Page::Recorded)center(34,tr(83),fg);}
         }
@@ -593,20 +608,23 @@ void Interface::render() {
     }
     if(now_<volumeUntil_&&frame_.page!=Page::VolumeLimit)drawVolume(false);
     if(now_<noticeUntil_) {
-        screen.fill(0xff000000|background());
         std::vector<std::wstring> lines;std::wstring line;std::wistringstream input(notice_);
         while(std::getline(input,line))lines.push_back(line);
-        for(size_t i=0;i<std::min(size_t(3),lines.size());i++){int y=lines.size()==1?25:lines.size()==2?(i?40:12):6+int(i)*19;if(textWidth(lines[i])>120)marquee(4,y,lines[i],fg,120);else center(y,lines[i],fg);}
+        std::vector<std::pair<int,std::wstring>> rows;for(size_t i=0;i<std::min(size_t(3),lines.size());i++)rows.emplace_back(lines.size()==1?25:lines.size()==2?(i?40:12):6+int(i)*19,lines[i]);drawMessage(rows,fg);
     }
-    if(now_<lockUntil_){screen.fill(0xff000000|background());image(3*256+(locked?15:18)+settings.theme,52,11);}
+    if(now_<lockUntil_){beginDialog();image(3*256+(locked?15:18)+settings.theme,52,11);}
     if(dim_)for(auto& p:screen)p=0xff000000|((p&0x00fefefe)>>1);
     if(settings.rotation)std::reverse(screen.begin(),screen.end());
 }
 void Interface::click(int x,int y) {
     if(booting_||updating_||shuttingDown_)return;
     if(locked){input(Key::Select);return;}
-    lockUntil_=0;
     if(blank_||dim_){input(Key::Select);return;}
+    if(now_<lockUntil_){lockUntil_=0;lastInput_=now_;return;}
+    lockUntil_=0;
+    if(now_<noticeUntil_){noticeUntil_=0;lastInput_=now_;return;}
+    if(now_<volumeUntil_&&frame_.page!=Page::VolumeLimit){volumeUntil_=0;lastInput_=now_;return;}
+    if(((frame_.page==Page::Playing||frame_.page==Page::Radio)&&!backend_.audio().error.empty())||(frame_.page==Page::Recording&&!backend_.recording().error.empty()))return;
     if(settings.rotation){x=127-x;y=63-y;}
     if(frame_.page==Page::Home){input(Key::Select);return;}
     if(frame_.page==Page::Playing){if(y>=46&&y<52){auto info=backend_.audio();if(info.duration>0){lastInput_=now_;backend_.seek(std::clamp((x-5)/118.0,0.0,1.0)*std::max(0.0,info.duration-.05));}}else input(Key::Select);return;}

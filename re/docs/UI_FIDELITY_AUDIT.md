@@ -24,6 +24,7 @@ equivalence with the physical player.
 | Radio geometry | Constructor 0x154ec0 | Original vertical scale, numeric font 31 and label placements; streams are an intentional desktop adapter |
 | Recording geometry | Constructor 0x156e66 | Original filename/time/progress/microphone placements; microphone and storage services are desktop code |
 | Shutdown | 0x15876c/0x15863e | Bye, then group-8 frames 0..6 at (15,9); requested slower 1000/500 ms timing |
+| Error dialogs | 0x14e318 / 0x14dae0 / 0x14e86c | Shared full-screen error/message clear; unsupported-file row rectangles y12/y40, glyph origins y13/y41; see DIALOG_SCREEN_AUDIT.md |
 | Confirmations | 0x157de8/0x15802a, recording 0x157532, factory reset 0x158240, playlist 0x15b3e0/0x15af5e | Original centered rows and fixed Play/OK and Back/Cancel footer, no Yes/No selection; Restore caption for reset |
 | Lock/unlock | Constructor 0x15802a, paint 0x157be0, timer/event 0x157c10/0x157c36 | Full-screen themed closed/open padlock at (52,11), timed return to previous page and retrigger on blocked input; 1250 ms is a desktop interpretation |
 | USB connected | HVMI blitter 0x10565c, table 0x10c054 | Actual extracted PC/player, battery and prerendered FullyCharged/Charging/transfer strips |
@@ -101,3 +102,16 @@ and DSP. Crosscompilation checks the Windows code, but real body hit testing,
 microphone capture and network streams still require Windows runtime checks.
 Wine cannot start in this sandbox because its runtime directory is read-only.
 The owner's earlier successful run predates these refinements.
+
+## Full-screen message follow-up
+
+DIALOG_SCREEN_AUDIT.md inventories every current LCD popup/error path. Two
+coverage defects were found and fixed: the unsupported-file partial rectangle
+and the radio failure's station-row-only presentation. Recording, notices,
+confirmations, empty/loading, volume, lock and lifecycle screens were already
+full-display, and now share more of their clearing/text code. Tests compare
+all pixels for injected failure families in all three themes and verify that
+screen clicks cannot seek behind a visible message. Native text property
+0x109 also establishes the one-pixel inset for 12-pixel glyphs in 14-pixel rows,
+now applied to message and confirmation/footer text. Error categories and
+exact native modal timing remain gaps, as described in that focused audit.

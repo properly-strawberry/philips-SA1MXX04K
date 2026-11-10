@@ -453,3 +453,18 @@ Next/Previous requests go through 0x15e66e/0x15e6a8 to a separate worker.
 This is a static, derived conclusion for the saved-browser path, not a device
 runtime observation. No desktop cursor behavior was changed. Full evidence
 and limitations: BROWSER_CURSOR.md and browser-cursor-dossiers.json.
+
+## Full-display error/message recheck
+
+Error creator 0x14e318 constructs class 0x1020 over (0,0,128,64); dispatcher
+0x14dae0 case 0x12 fills File format / not supported! through original labels
+0x66/0x67. Generic kind-0 row rectangles start at y12/y40, or y6/y25/y44
+for the language-21 three-row case. Text property 0x109=1 at 0x14e86c computes
+vertical centering; with default 12-pixel font in 14 pixels, glyph y is row y+1.
+This also corrects the previously one-pixel-high confirmation/footer drawing.
+
+The desktop partial error repaint and in-row radio failure are replaced by a
+shared full-screen dialog renderer. The complete current-page audit, exact
+evidence IDs, pixel tests, input/layer behavior and remaining error-category
+limitations are in DIALOG_SCREEN_AUDIT.md. Code is retained in
+dialog-error-dossiers.json; REA closed normally after saving it.

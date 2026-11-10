@@ -83,7 +83,9 @@ and Remove From Playlist entries. Add uses the current queued track; Remove
 opens the playlist song list. Both ask for confirmation. The M shortcut also
 provides the applicable playlist action for the current track. The M3U8 file is editable
 and stores paths relative to Playlists. Unsupported or broken
-files show an error; use Next to continue. Folder symlinks/reparse points are
+files show a full-screen error; use Next to continue or Back to return. Visible
+messages cover the title, track counter and battery too. Clicking a message
+does not seek or activate controls behind it. Folder symlinks/reparse points are
 skipped. Formats depend on FFmpeg; the browser includes MP3, FLAC, WAV, Ogg,
 Opus, M4A/AAC, WMA, AIFF, APE, WavPack, ALAC and M4B.
 
@@ -192,6 +194,7 @@ tables, 18 icon/theme screens, original folder/USB pixels at recovered coordinat
 Updating layout/percentages/timing, finite title scrolling and metadata gating,
 modal confirmation captions/actions, original playlist routes, file-delete
 cancellation, fullscreen lock/open pixels/timing, zero-padded counters, hidden radio navigation,
+whole-display failure/notice pixels and pointer click guards in all three themes,
 play controls, settings, display timers, JSON/MHz
 tuning, save/discard recording flow, lock, a 5,000-song library and EQ DSP checks.
 It emits rendered PPM screen evidence under gen/ui-tests/fixture. These tests do

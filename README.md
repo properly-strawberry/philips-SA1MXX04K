@@ -157,7 +157,8 @@ directly and does not launch `ffmpeg.exe`.
 
 `make test-ui` runs the actual shared renderer/controller with fake audio and
 microphone services. It checks resource pixels, animation sequencing, menus,
-confirmation actions, recording decisions, radio JSON and EQ behavior. It does
+confirmation actions, injected full-screen failures and popup click guards,
+recording decisions, radio JSON and EQ behavior. It does
 not establish real microphone or network operation on Windows. For decoder and
 runtime checks, run `tools/test_windows.ps1` on Windows as described in PLAYER.md.
 

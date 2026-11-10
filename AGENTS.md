@@ -361,3 +361,29 @@ restores that cursor. Next/Previous requests use separate playback-worker state.
 Do not change the desktop cursor-follow behavior under a claim of firmware
 fidelity without new evidence. No controller change was made for this lookup.
 This is a static conclusion; no physical-device trace was performed.
+
+### Full-screen errors and popup audit
+
+Read `re/docs/DIALOG_SCREEN_AUDIT.md`; new firmware code/assembly is retained
+in `dialog-error-dossiers.json`. Error creator 0x14e318 uses a full 128x64
+class-0x1020 dialog. Dispatcher 0x14dae0 case 0x12 selects File format / not
+supported!, normally in widget rows y12/y40; language 21 uses y6/y25/y44.
+Property 0x109=1 in 0x14e86c centers the 12-pixel font in each 14-pixel row:
+glyph origins are widget y+1, including confirmation footer glyphs at y50.
+
+Removed the playback error's partial rectangle, which leaked title/counter/
+battery. Radio Unavailable also replaces the full LCD now (desktop network
+adapter presentation). `beginDialog()` resets clipping and clears all pixels;
+`drawMessage()` is shared by these errors, microphone errors, ordinary notices
+and confirmation text. Lock, volume and empty/loading states share the clear.
+
+Screen clicks on notices, volume and open-padlock feedback consume/dismiss the
+visible layer; clicks on persistent failure messages do not reach a hidden
+progress bar or menu. Failed-track seek/pause is ignored; transport presses
+still recover to the next/previous file. Ordinary notice keyboard passthrough
+and exact native modal lifetimes remain adaptations. Audio/recorder error
+classification is still broad, so not every failure caption is accurate.
+
+Native tests inject all failure families and compare every screen pixel in
+all three themes, checking priority, rotation, wake and recovery. Windows is
+crosscompiled; sandboxed Wine still cannot start for a runtime check.
