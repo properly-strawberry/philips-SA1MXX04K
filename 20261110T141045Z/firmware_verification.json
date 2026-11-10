@@ -1,0 +1,20 @@
+{
+  "format": "SB2",
+  "extension": ".sb",
+  "bytes": 9000928,
+  "header_version": "1.1",
+  "header_sha1_valid": true,
+  "product_version_fields": [
+    1,
+    33,
+    0
+  ],
+  "component_version_fields": [
+    1,
+    33,
+    0
+  ],
+  "sha256": "f0565f2861cb5aaec78821ce2017c77ca222422a28e0a9ea72aa4db579a5d7ad",
+  "source": "drive_03_type_01_tag_50.bin",
+  "system_copies_identical": true
+}

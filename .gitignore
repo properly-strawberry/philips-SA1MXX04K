@@ -1,0 +1,13 @@
+# Reproducible analysis outputs.
+/gen/
+
+# Local upstream checkout, build products and duplicate device captures.
+/dump_tools/rockbox/
+/dump_tools/dumps/
+/dump_tools/*.log
+
+# Python caches and local environments.
+__pycache__/
+*.py[cod]
+.venv/
+venv/

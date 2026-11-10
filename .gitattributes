@@ -1,0 +1,114 @@
+# Line endings: LF for every text file, CRLF only where Windows tools need it, and
+# binaries never touched. Reusable as is; repo-specific rules go at the end, since
+# later lines win.
+#
+# Git stores every text file with LF either way; `eol` only sets what a checkout
+# writes. After adding this to a repo with files already committed in CRLF, run
+# `git add --renormalize .` once and commit the result.
+
+# Text, detected by content, is LF in the repo and in the working tree, whatever
+# core.autocrlf says.
+* text=auto eol=lf
+
+# Shell scripts break on CRLF: always text, always LF, even if detection misses.
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.zsh   text eol=lf
+
+# Windows formats whose tools expect CRLF: stored as LF, checked out as CRLF.
+# (cmd.exe misreads labels and GOTOs in LF batch files.)
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+*.vbs      text eol=crlf
+*.wsf      text eol=crlf
+*.inf      text eol=crlf
+*.sln      text eol=crlf
+*.vcxproj  text eol=crlf
+*.vcxproj.filters text eol=crlf
+*.csproj   text eol=crlf
+*.vbproj   text eol=crlf
+*.fsproj   text eol=crlf
+*.props    text eol=crlf
+*.targets  text eol=crlf
+
+# Left to detection on purpose: *.ps1 (PowerShell reads LF fine), *.ini (also used by
+# pytest, PHP, ...), *.reg and *.rc (often UTF-16, which detection treats as binary).
+
+# Binaries: never converted, diffed or merged as text. Detection only looks for a NUL
+# in the first 8 KB, which some of these (PDF above all) may not have.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.bmp   binary
+*.ico   binary
+*.cur   binary
+*.webp  binary
+*.avif  binary
+*.tif   binary
+*.tiff  binary
+*.psd   binary
+*.xcf   binary
+*.exr   binary
+*.hdr   binary
+*.pdf   binary
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.eot   binary
+*.zip   binary
+*.gz    binary
+*.tgz   binary
+*.bz2   binary
+*.xz    binary
+*.7z    binary
+*.rar   binary
+*.tar   binary
+*.jar   binary
+*.apk   binary
+*.aab   binary
+*.mp3   binary
+*.ogg   binary
+*.oga   binary
+*.wav   binary
+*.flac  binary
+*.m4a   binary
+*.mid   binary
+*.mp4   binary
+*.webm  binary
+*.mov   binary
+*.avi   binary
+*.exe   binary
+*.dll   binary
+*.so    binary
+*.dylib binary
+*.bin   binary
+*.rom   binary
+*.wasm  binary
+*.class binary
+*.pyc   binary
+*.npy   binary
+*.npz   binary
+*.sqlite  binary
+*.sqlite3 binary
+*.db    binary
+*.docx  binary
+*.xlsx  binary
+*.pptx  binary
+*.odt   binary
+*.ods   binary
+*.blend binary
+*.glb   binary
+*.fbx   binary
+*.keystore binary
+*.jks   binary
+
+# --- This repo ---------------------------------------------------------------
+# (repo-specific rules go here; e.g. `vendor/originals/** -text` keeps files byte
+# for byte)
+
+*.sb    binary
+*.elf   binary
+# Preserve original capture bytes, including metadata line endings.
+20261110T141045Z/** -text

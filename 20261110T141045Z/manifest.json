@@ -1,0 +1,90 @@
+{
+  "path": "\\\\?\\usbstor#disk&ven_philips&prod_gogear_mix&rev_0100#020300014e144d3a0002d9b15f7bcd3a&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}",
+  "serial": "020300014e144d3a0002d9b15f7bcd3a",
+  "vendor": "Philips",
+  "product": "GoGear Mix",
+  "revision": "0100",
+  "protocol": "0600",
+  "drives": [
+    {
+      "drive": 0,
+      "type": 0,
+      "tag": 10,
+      "table_size": 4246732800,
+      "sector_size": 4096,
+      "size": 3948937216,
+      "sector_count": 964096
+    },
+    {
+      "drive": 1,
+      "type": 2,
+      "tag": 11,
+      "table_size": 4194304,
+      "sector_size": 4096,
+      "size": 4194304,
+      "sector_count": 1024
+    },
+    {
+      "drive": 2,
+      "type": 2,
+      "tag": 12,
+      "table_size": 4194304,
+      "sector_size": 4096,
+      "size": 4194304,
+      "sector_count": 1024
+    },
+    {
+      "drive": 3,
+      "type": 1,
+      "tag": 80,
+      "table_size": 9437184,
+      "sector_size": 4096,
+      "size": 9437184,
+      "sector_count": 2304
+    },
+    {
+      "drive": 4,
+      "type": 1,
+      "tag": 96,
+      "table_size": 9437184,
+      "sector_size": 4096,
+      "size": 9437184,
+      "sector_count": 2304
+    },
+    {
+      "drive": 5,
+      "type": 1,
+      "tag": 112,
+      "table_size": 9437184,
+      "sector_size": 4096,
+      "size": 9437184,
+      "sector_count": 2304
+    }
+  ],
+  "backups": [
+    {
+      "file": "drive_02_type_02_tag_0c.bin",
+      "bytes": 4194304,
+      "sha256": "29c2aaf39fd7ca173038a67ab8258da9cb1869f28dcc921643ccd05cdbc41508",
+      "verified_second_read": true
+    },
+    {
+      "file": "drive_03_type_01_tag_50.bin",
+      "bytes": 9437184,
+      "sha256": "d4dfd50d23fab120e31896673401b92ebbb9caf686f386b0072532e2c20aa223",
+      "verified_second_read": true
+    },
+    {
+      "file": "drive_04_type_01_tag_60.bin",
+      "bytes": 9437184,
+      "sha256": "d4dfd50d23fab120e31896673401b92ebbb9caf686f386b0072532e2c20aa223",
+      "verified_second_read": true
+    },
+    {
+      "file": "drive_05_type_01_tag_70.bin",
+      "bytes": 9437184,
+      "sha256": "d4dfd50d23fab120e31896673401b92ebbb9caf686f386b0072532e2c20aa223",
+      "verified_second_read": true
+    }
+  ]
+}
