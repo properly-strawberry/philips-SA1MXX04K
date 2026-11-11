@@ -1,5 +1,6 @@
 #pragma once
 #include "audio.h"
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <functional>
@@ -38,7 +39,7 @@ enum class Page { Home,Music,Artists,Albums,Group,Songs,Folders,Playing,Options,
     Settings,Theme,PlayMode,Repeat,Shuffle,Sound,Equalizer,CustomEQ,VolumeLimit,Display,
     Backlight,ScreenOff,Rotation,Language,Information,Legal,Confirm,Message,Radio,
     RadioOptions,Presets,Recordings,Recording,Recorded,Playlists,Books,Bookmarks,
-    USB,USBConnected,PlaylistRemove };
+    USB,USBConnected,PlaylistRemove,Charging };
 enum class Key { Previous,Next,Up,Down,Select,Back,Home,Menu,VolumeUp,VolumeDown,
     SeekBack,SeekForward,Lock };
 enum class SliderPosition { Lock,Unlock,Power };
@@ -56,6 +57,9 @@ public:
     std::vector<Song> library;
     fs::path lastPlayed;
     double resumePosition=0;
+    // Charge shown by the corner indicator: 0 (empty outline) to 4 bars, RSRC images 1.0..1.4.
+    int battery=4;
+    void stepBattery(int steps){battery=std::clamp(battery+steps,0,4);}
     bool scanning=true,locked=false,radio=false;
     std::array<uint32_t,128*64> screen{};
     void setLibrary(std::vector<Song> songs);

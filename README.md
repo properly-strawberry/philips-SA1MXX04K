@@ -93,7 +93,9 @@ templates, never the local music library or station configuration.
 | `M` | Current-track shortcuts, or radio options |
 | `S` / `R` | Shuffle / cycle repeat modes |
 | F5 | Rescan media and reload stations |
+| F7 / F8 | Battery charge down / up one step |
 | F9 / F10 | Connected-to-PC / charge-choice previews |
+| F11 | Switched-off-and-charging preview |
 
 The marks on the control plate and the menu rows are clickable. Held volume and navigation keys
 repeat; short actions complete on release. Confirmations use Play/OK and

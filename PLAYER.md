@@ -99,6 +99,13 @@ services remain adaptations.
 - A padlock mark sits left of the slider's slot and a power mark right of it.
   The handle follows a rightward drag smoothly, arming power near the right stop, and eases back to center on
   release. The left Lock detent snaps into place and stays latched.
+- F7 / F8: lower / raise the battery charge by one step, from the empty outline
+  to four bars (firmware images 1.0 to 1.4). It stops at both ends and is
+  remembered in `philips.ini`.
+- F11: the screen of a switched-off player on a charger. The large battery
+  fills from the charge set with F7/F8 and starts over; it never gains charge
+  by itself. At full charge it shows the lightning battery. The F9 Charging
+  state starts its small animation from the set charge too.
 - F9: original Connected-to-PC screen. Up/Down cycles FullyCharged, Charging
   and Do not disconnect. F10: localized Charge & transfer / Charge & play preview.
 - Settings includes play modes, sound/EQ, volume limit, theme, display timers,

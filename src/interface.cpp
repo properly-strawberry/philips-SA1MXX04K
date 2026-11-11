@@ -603,7 +603,7 @@ void Interface::status(const TrackInfo& info) {
     if(settings.repeat)image(2*256+(settings.repeat==2?9:12)+settings.theme,55,52);
     if(settings.shuffle)image(2*256+15+settings.theme,70,52);
     if(settings.equalizer)image(2*256+6+settings.theme,85,52);
-    image(1*256+4,107,51);
+    image(1*256+battery,107,51);
 }
 void Interface::render() {
     clip_={0,0,128,64};
@@ -620,7 +620,7 @@ void Interface::render() {
     }
     if(frame_.page==Page::Home) {
         int family=homeFamilies[std::clamp(frame_.selected,0,int(homeFamilies.size())-1)],base=9+settings.theme*36,step=std::min(5,int((now_-selectedAt_)/50));
-        image(settings.theme,9,8);image(base+family*6+step,48,0);if(frame_.selected<5)image(6+settings.theme,5,4+frame_.selected*11);image(1*256+4,110,2);
+        image(settings.theme,9,8);image(base+family*6+step,48,0);if(frame_.selected<5)image(6+settings.theme,5,4+frame_.selected*11);image(1*256+battery,110,2);
         auto title=tr(family==5&&!info.playing?13:7+family);
         int x=28+std::max(0,(90-textWidth(title,true))/2);marquee(x,48,title,firmwareColor(primary[settings.theme]),118-x,true);
     } else if(frame_.page==Page::Playing) {
@@ -637,7 +637,7 @@ void Interface::render() {
         }
     } else if(frame_.page==Page::Radio) {
         auto color=settings.theme==2?firmwareColor(primary[2]):0xffffff;
-        image(2*256+24+settings.theme,5,0);image(2*256+27+settings.theme,10,55-((frequency_-875)*100/205)*55/100);image(1*256+4,107,51);
+        image(2*256+24+settings.theme,5,0);image(2*256+27+settings.theme,10,55-((frequency_-875)*100/205)*55/100);image(1*256+battery,107,51);
         std::wostringstream frequency;frequency<<std::fixed<<std::setprecision(1)<<frequency_/10.0;number(26,20,frequency.str(),color,2,1,75);text(106,25,L"FM",color,true);
         std::wstring name=radioCandidate_>=0?stations[radioCandidate_].name:radioCandidate_==-2?tr(61):L"--";
         if(info.error.empty())marquee(26,47,name,color,75);
@@ -648,7 +648,7 @@ void Interface::render() {
         std::error_code error;auto space=fs::space(voice_,error);double remaining=error?14400:std::min(14400.0,space.available/44100.0);
         number(73,37,timeText(remaining),0xffffff,false,2,50);
         const uint32_t progressColors[]={0xff2d2d2d,0xffa87455,0xffa390e9};rect(5,48,118,2,firmwareColor(progressColors[settings.theme]));rect(5,48,int(118*record.seconds/std::max(1.0,record.seconds+remaining)),2,0xffffff);
-        image(3*256+28,5,52);image(1*256+4,107,51);
+        image(3*256+28,5,52);image(1*256+battery,107,51);
         if(!record.error.empty())drawMessage({{12,L"Microphone"},{40,L"unavailable"}},fg);
     } else if(frame_.page==Page::CustomEQ) {
         image(6*256+settings.theme,0,0);
@@ -659,12 +659,18 @@ void Interface::render() {
         drawVolume(true);
     } else if(frame_.page==Page::Legal) {
         for(int i=0;i<5;i++){int index=frame_.selected+i;if(index<int(std::size(firmwareLegal)))text(1,2+i*12,firmwareLegal[index],fg);}
+    } else if(frame_.page==Page::Charging) {
+        // Switched off on a charger. RSRC 1.24 is a black screen with the empty battery; the 38x31 images
+        // 1.6..1.11 match its outline exactly at (42,14). Filling from the set charge, and the lightning
+        // image once full, are the desktop's choice: the firmware's sequence is not traced.
+        image(1*256+24,0,0);
+        image(1*256+6+(battery<4?battery+int((now_/500)%(5-battery)):5),42,14);
     } else if(frame_.page==Page::USBConnected) {
         screen.fill(0xff000000);
         image(0x10000+6,81,17);image(0x10000+7,19,26);
         bool transfer=frame_.selected==2;int state=transfer?8:frame_.selected==1?10:12;
         image(0x10000+(transfer?14+int((now_/100)%10):14),50,30);
-        image(0x10000+(frame_.selected==1?int((now_/250)%5):5),110,2);
+        image(0x10000+(frame_.selected==1?battery+int((now_/250)%(5-battery)):5),110,2);
         image(0x10000+state,13,50);image(0x10000+state+1,13,56);
     } else if(frame_.page==Page::USB) {
         image(1*256+4,111,0);image(9*256+settings.language*2+std::min(1,frame_.selected),0,20);

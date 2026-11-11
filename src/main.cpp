@@ -338,7 +338,7 @@ void loadSettings() {
     s.backlight=iniInt(L"Backlight",0,0,60);s.screenOff=iniInt(L"ScreenOff",0,0,60);s.rotation=iniInt(L"Rotation",0,0,1);
     for(int i=0;i<5;i++)s.bands[i]=iniInt((L"Band"+std::to_wstring(i)).c_str(),0,-12,12);
     wchar_t last[32768];GetPrivateProfileStringW(L"Player",L"LastPlayed",L"",last,32768,(appDir/L"philips.ini").c_str());ui->lastPlayed=last;
-    ui->resumePosition=iniInt(L"ResumeSeconds",0,0,24*3600);
+    ui->resumePosition=iniInt(L"ResumeSeconds",0,0,24*3600);ui->battery=iniInt(L"Battery",4,0,4);
     auto playlist=layoutDir/L"Playlists"/L"Playlist-on-the-Go.m3u8";
     std::ifstream input(playlist,std::ios::binary);std::string line;
     while(std::getline(input,line)) {
@@ -355,7 +355,7 @@ void saveSettings() {
     ui->remember();
     auto ini=appDir/L"philips.ini";auto& s=ui->settings;
     auto write=[&](const wchar_t* key,int value){WritePrivateProfileStringW(L"Player",key,std::to_wstring(value).c_str(),ini.c_str());};
-    write(L"Borderless",borderless);if(normalSize.cx>0){write(L"Width",normalSize.cx);write(L"Height",normalSize.cy);}write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
+    write(L"Borderless",borderless);write(L"Battery",ui->battery);if(normalSize.cx>0){write(L"Width",normalSize.cx);write(L"Height",normalSize.cy);}write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
     write(L"Repeat",s.repeat);write(L"Shuffle",s.shuffle);write(L"Equalizer",s.equalizer);write(L"Backlight",s.backlight);write(L"ScreenOff",s.screenOff);write(L"Rotation",s.rotation);
     for(int i=0;i<5;i++)write((L"Band"+std::to_wstring(i)).c_str(),int(s.bands[i]));
     WritePrivateProfileStringW(L"Player",L"LastPlayed",ui->lastPlayed.c_str(),ini.c_str());write(L"ResumeSeconds",int(ui->resumePosition));
@@ -389,6 +389,8 @@ void smokeTick() {
     }
 }
 LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
+    // Windows sends F10 alone as a system key (it opens the window menu), so it never arrives as WM_KEYDOWN.
+    if(wp==VK_F10&&(msg==WM_SYSKEYDOWN||msg==WM_SYSKEYUP))msg=msg==WM_SYSKEYDOWN?WM_KEYDOWN:WM_KEYUP;
     switch(msg) {
     case WM_CREATE:SetTimer(hwnd,1,33,nullptr);return 0;
     case WM_GETMINMAXINFO:{auto* i=reinterpret_cast<MINMAXINFO*>(lp);i->ptMinTrackSize={W/2,H/2};return 0;}
@@ -407,7 +409,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     case WM_KEYDOWN:
         if(closing)return 0;
         if(lp&(1LL<<30))return 0;
-        if(ui->page()==Page::Confirm&&(wp=='S'||wp=='R'||wp==VK_F5||wp==VK_F9||wp==VK_F10))return 0;
+        if(ui->page()==Page::Confirm&&(wp=='S'||wp=='R'||wp==VK_F5||wp==VK_F9||wp==VK_F10||wp==VK_F11))return 0;
         if(wp==VK_ESCAPE||wp==VK_BACK)pressKeyboard(wp,Key::Back);
         else if(wp==VK_HOME)ui->input(Key::Home);
         else if(wp==VK_RETURN||wp==VK_SPACE)pressKeyboard(wp,Key::Select);
@@ -421,8 +423,9 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         else if(wp=='P'){powerKeyDown=true;ui->moveSlider(SliderPosition::Power);}
         else if(wp=='S'&&!ui->locked&&!ui->booting()&&!ui->updating())ui->settings.shuffle=ui->settings.shuffle?0:1;
         else if(wp=='R'&&!ui->locked&&!ui->booting()&&!ui->updating())ui->settings.repeat=(ui->settings.repeat+1)%3;
+        else if(wp==VK_F7||wp==VK_F8)ui->stepBattery(wp==VK_F8?1:-1);
         else if(wp==VK_F5){ui->loadStations(layoutDir/L"Playlists"/L"radio.json");beginScan();}
-        else if((wp==VK_F9||wp==VK_F10)&&!ui->locked&&!ui->booting()&&!ui->updating()){ui->input(Key::Home);ui->navigate(wp==VK_F9?Page::USBConnected:Page::USB);}
+        else if((wp==VK_F9||wp==VK_F10||wp==VK_F11)&&!ui->locked&&!ui->booting()&&!ui->updating()){ui->input(Key::Home);ui->navigate(wp==VK_F9?Page::USBConnected:wp==VK_F10?Page::USB:Page::Charging);}
         return 0;
     case WM_KEYUP:
         if(wp=='P'){powerKeyDown=false;if(!sliderDragging||ui->sliderPosition()!=SliderPosition::Power)ui->releaseSlider();}

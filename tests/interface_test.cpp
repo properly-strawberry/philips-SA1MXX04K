@@ -237,6 +237,9 @@ int main(int argc,char** argv) {
      backend.state.position=179;ui.input(Key::SeekForward);assert(backend.seekPosition==179.95);backend.state.position=1;ui.input(Key::SeekBack);assert(backend.seekPosition==0);
      ui.click(64,48);assert(backend.seekPosition>89&&backend.seekPosition<91);ui.click(127,48);assert(backend.seekPosition==179.95);
      ui.render();requireAsset(ui,2*256+5,5,35);requireAsset(ui,1*256+4,107,51);
+     // The battery indicator follows the charge in steps and stops at both ends.
+     ui.stepBattery(-9);assert(ui.battery==0);ui.render();requireAsset(ui,1*256+0,107,51);
+     ui.stepBattery(1);ui.render();requireAsset(ui,1*256+1,107,51);ui.stepBattery(9);assert(ui.battery==4);ui.render();requireAsset(ui,1*256+4,107,51);
      ui.input(Key::Next);backend.state.finished=true;backend.state.playing=false;backend.state.position=180;ui.settings.repeat=0;ui.tick(clock+=1000);assert(ui.lastPlayed.filename()==L"two.flac"&&ui.resumePosition==0);
      ui.navigate(Page::Playing);backend.state.finished=false;backend.state.playing=true;backend.state.duration=0;backend.seekPosition=-1;ui.input(Key::SeekForward);ui.click(60,48);assert(backend.seekPosition==-1);backend.state.duration=180;}
     ui.input(Key::Menu);assert(ui.page()==Page::Options);auto options=ui.labels();assert(options==std::vector<std::wstring>({L"Play Mode",L"Sound Settings",L"Add To Playlist",L"Delete"}));dump(ui,root/"options.ppm");
@@ -247,6 +250,11 @@ int main(int argc,char** argv) {
     for(auto page:{Page::Settings,Page::Theme,Page::PlayMode,Page::Repeat,Page::Shuffle,Page::Sound,Page::Equalizer,Page::Display,Page::Backlight,Page::ScreenOff,Page::Rotation,Page::Language,Page::Information,Page::Legal,Page::Books,Page::Recordings,Page::USB}){ui.navigate(page);assert(!ui.labels().empty());ui.render();}
     ui.navigate(Page::Folders);assert(ui.labels().front()==L"Album");dump(ui,root/"folder-selected.ppm");requireAsset(ui,3*256+9,9,29);ui.input(Key::Next);dump(ui,root/"folder-unselected.ppm");requireAsset(ui,3*256+6,9,8);ui.input(Key::Previous);ui.input(Key::Select);assert(ui.labels().front()==L"two.flac");ui.input(Key::Back);assert(ui.labels().front()==L"Album");
     ui.navigate(Page::Settings);assert(ui.labels().size()==7);ui.navigate(Page::Display);assert(ui.labels().size()==3);ui.navigate(Page::Repeat);assert(ui.labels()==std::vector<std::wstring>({L"Repeat Off",L"Repeat 1",L"Repeat All"}));ui.navigate(Page::Shuffle);assert(ui.labels().size()==2);
+    // Off-and-charging demo: fills from the set charge and loops; a full battery shows the lightning image.
+    {Fake b;Interface v(b,root/"Music");v.tick(100);v.skipBoot();v.battery=2;v.navigate(Page::Charging);
+     v.tick(3000);v.render();requireAsset(v,1*256+8,42,14);v.tick(3500);v.render();requireAsset(v,1*256+9,42,14);dump(v,root/"charging.ppm");
+     v.tick(4000);v.render();requireAsset(v,1*256+10,42,14);v.tick(4500);v.render();requireAsset(v,1*256+8,42,14);
+     v.stepBattery(2);v.render();requireAsset(v,1*256+11,42,14);dump(v,root/"charged.ppm");v.input(Key::Back);assert(v.page()!=Page::Charging);}
     ui.navigate(Page::USBConnected);dump(ui,root/"usb-fully-charged.ppm");requireAsset(ui,0x10000+6,81,17);requireAsset(ui,0x10000+12,13,50);requireAsset(ui,0x10000+13,13,56);ui.input(Key::Down);dump(ui,root/"usb-charging.ppm");ui.input(Key::Down);dump(ui,root/"usb-transfer.ppm");
     ui.settings.backlight=10;ui.settings.screenOff=20;ui.tick(90000);ui.render();assert(std::all_of(ui.screen.begin(),ui.screen.end(),[](auto p){return p==0xff000000;}));ui.input(Key::Select);ui.render();assert(std::any_of(ui.screen.begin(),ui.screen.end(),[](auto p){return p!=0xff000000;}));ui.settings.backlight=ui.settings.screenOff=0;
     {std::ofstream out(root/"radio.json");out<<R"({"stations":[{"mhz":99.5,"name":"Test \u017D","url":"https://example.invalid/audio"},{"mhz":89.0,"name":"Other","url":"http://example.invalid/other"}]})";}

@@ -541,3 +541,23 @@ minus and plus are raised, the two signs only.
   non-maximized size) in `philips.ini`; frameless start derives height from
   width. Position is deliberately not saved (owner's decision). Wine round
   trip observed: framed 700x400 kept; frameless Width=600 rewrote Height=268.
+
+### Battery steps - 2026-11-11
+
+- F7/F8 step `Interface::battery` 0..4 (clamped, saved as `Battery` in
+  `philips.ini`); the indicator on
+  Home, Playing, Radio and Recording draws RSRC 1.0..1.4. `make test-ui` covers it.
+- Observed in RSRC group 1: 1.0..1.4 are 16x11 with 0..4 bars, 1.5 lightning;
+  1.6..1.23 are 38x31 versions of the same six states for Dark, Blue and Pink;
+  1.24/1.25 are 128x64 black screens with a centred empty and one-bar battery.
+- Owner's recollection: the large battery appeared when the player was off
+  and on a charger (not a PC). F11 previews that as `Page::Charging`: 1.24 as
+  the ground, then 1.6+n at (42,14), cycling from the set charge to four bars
+  every 500 ms; at full charge 1.11 (lightning). Observed: 1.6 and 1.7 match
+  the battery in 1.24 and 1.25 pixel for pixel at (42,14).
+- The F9 Charging state's small animation also starts from the set charge.
+- Unknown: the firmware's frame order and timing, whether full charge shows
+  four bars or the lightning image (lightning follows the host painter's
+  above-94-percent branch), what 1.25 and the Blue/Pink sets 1.12..1.23 are
+  for, percent thresholds per step, and any shutdown at empty. The F10
+  charge-choice page still shows a fixed full battery.
