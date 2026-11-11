@@ -11,7 +11,7 @@ from pathlib import Path
 import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
-elf32 = runpy.run_path(str(ROOT.parent / 'tools/sb_extract.py'))['elf32']
+elf32 = runpy.run_path(str(ROOT / 'tools/sb_extract.py'))['elf32']
 manifest = json.loads((ROOT / 'gen/sb/manifest.json').read_text())
 output = ROOT / 'gen/deep'
 output.mkdir(parents=True, exist_ok=True)

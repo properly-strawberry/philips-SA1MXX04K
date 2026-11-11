@@ -131,11 +131,11 @@ The referenced URL was not fetched or executed.
 
 ## Reproduce and continue
 
-From the workspace root, use new output directory names if outputs exist:
+From this repository's root, use new output directory names if outputs exist:
 
 ```sh
-python3 -I tools/sb_extract.py philips/20261110T141045Z/firmware.sb philips/gen/sb
-python3 -I tools/stmp_rsrc.py philips/gen/sb/05_rsrc.bin philips/gen/resources
+python3 -I tools/sb_extract.py 20261110T141045Z/firmware.sb gen/sb
+python3 -I tools/stmp_rsrc.py gen/sb/05_rsrc.bin gen/resources
 ```
 
 `sb_extract.py` uses stdlib and installed OpenSSL; `stmp_rsrc.py` uses stdlib.

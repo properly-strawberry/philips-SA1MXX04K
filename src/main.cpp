@@ -47,6 +47,8 @@ bool sliderDragging=false,powerKeyDown=false,releasingCapture=false;
 player::SliderMotion sliderMotion;
 // Dragging the frameless player's corner mark: where the pointer and the window were when it began.
 bool resizing=false;POINT resizeFrom{};RECT resizeStart{};
+// Client size while neither minimized nor maximized; kept in philips.ini. The position is not kept.
+SIZE normalSize{};
 std::wstring screenshotPath,smokeReport;
 int smokeStep=-1;
 std::vector<std::string> smokeChecks;
@@ -353,7 +355,7 @@ void saveSettings() {
     ui->remember();
     auto ini=appDir/L"philips.ini";auto& s=ui->settings;
     auto write=[&](const wchar_t* key,int value){WritePrivateProfileStringW(L"Player",key,std::to_wstring(value).c_str(),ini.c_str());};
-    write(L"Borderless",borderless);write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
+    write(L"Borderless",borderless);if(normalSize.cx>0){write(L"Width",normalSize.cx);write(L"Height",normalSize.cy);}write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
     write(L"Repeat",s.repeat);write(L"Shuffle",s.shuffle);write(L"Equalizer",s.equalizer);write(L"Backlight",s.backlight);write(L"ScreenOff",s.screenOff);write(L"Rotation",s.rotation);
     for(int i=0;i<5;i++)write((L"Band"+std::to_wstring(i)).c_str(),int(s.bands[i]));
     WritePrivateProfileStringW(L"Player",L"LastPlayed",ui->lastPlayed.c_str(),ini.c_str());write(L"ResumeSeconds",int(ui->resumePosition));
@@ -481,7 +483,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
             r->right=r->left+width;r->bottom=r->top+int(std::lround(width*double(H)/W));return TRUE;
         }
         break;
-    case WM_SIZE:if(borderless&&wp!=SIZE_MINIMIZED)presentFloating(hwnd);break;
+    case WM_SIZE:if(wp==SIZE_RESTORED)normalSize={LOWORD(lp),HIWORD(lp)};if(borderless&&wp!=SIZE_MINIMIZED)presentFloating(hwnd);break;
     case WM_CLOSE:if(!closing){cancelHeldControls(hwnd,true);if(smokeStep<0)saveSettings();recorder.finish(true);audio->stop();ui->shutdown();closing=true;}return 0;
     case WM_DESTROY:KillTimer(hwnd,1);PostQuitMessage(0);return 0;
     }
@@ -510,7 +512,8 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     WNDCLASSW klass{};klass.lpfnWndProc=procedure;klass.hInstance=instance;klass.lpszClassName=L"PhilipsGoGearMix";klass.hCursor=LoadCursor(nullptr,IDC_ARROW);klass.hIcon=LoadIconW(instance,MAKEINTRESOURCEW(1));RegisterClassW(&klass);
     borderless=iniInt(L"Borderless",1,0,1)!=0;
     DWORD style=borderless?floatingStyle:framedStyle,extended=borderless?WS_EX_LAYERED:0;
-    RECT bounds{0,0,W,H};AdjustWindowRectEx(&bounds,style,FALSE,extended);started=GetTickCount64();
+    int width=iniInt(L"Width",W,W/2,16384),height=borderless?width*H/W:iniInt(L"Height",H,H/2,16384);
+    RECT bounds{0,0,width,height};AdjustWindowRectEx(&bounds,style,FALSE,extended);started=GetTickCount64();
     window=CreateWindowExW(extended,klass.lpszClassName,L"Philips GoGear Mix",style,CW_USEDEFAULT,CW_USEDEFAULT,bounds.right-bounds.left,bounds.bottom-bounds.top,nullptr,nullptr,instance,nullptr);
     if(!window){ui.reset();audio.reset();art={};playerCanvas.release();windowCanvas.release();GdiplusShutdown(token);return 1;}
     ShowWindow(window,show);if(borderless)presentFloating(window);beginScan();MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}

@@ -43,7 +43,7 @@ def read_host_assets(root=ROOT):
 
 
 def extract():
-    write_png = runpy.run_path(str(ROOT.parent / 'tools/pngw.py'))['write']
+    write_png = runpy.run_path(str(ROOT / 'tools/pngw.py'))['write']
     destination = ROOT / 'gen/host-ui'
     destination.mkdir(parents=True, exist_ok=True)
     assets = read_host_assets()

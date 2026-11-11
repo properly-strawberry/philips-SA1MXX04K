@@ -136,17 +136,16 @@ Requirements:
   `lib/`, `bin/` and `LICENSE.txt`. The SDK used here and its archive hash are
   documented in [third_party/FFMPEG.md](third_party/FFMPEG.md).
 
-Asset extraction currently also depends on shared workspace utilities outside
-this repository: `../tools/sb_extract.py` and `../tools/stmp_rsrc.py`.
-`make map-vmi` reuses the former; exporting standalone host-mode PNGs additionally
-uses `../tools/pngw.py`. A standalone checkout needs those utilities in that
-relative layout, or previously generated extraction outputs.
+The extraction scripts are in `tools/` and use only the Python standard library:
+`sb_extract.py` (which also calls the installed `openssl`), `stmp_rsrc.py` and
+`pngw.py`. `make map-vmi` reuses the first; exporting standalone host-mode PNGs
+uses the third.
 
 From this repository's root, prepare the assets once:
 
 ```sh
-python3 -I ../tools/sb_extract.py 20261110T141045Z/firmware.sb gen/sb
-python3 -I ../tools/stmp_rsrc.py gen/sb/05_rsrc.bin gen/resources
+python3 -I tools/sb_extract.py 20261110T141045Z/firmware.sb gen/sb
+python3 -I tools/stmp_rsrc.py gen/sb/05_rsrc.bin gen/resources
 ```
 
 Both extractors require a new destination directory. Keep the original capture
@@ -197,7 +196,7 @@ available for static analysis.
 | `src/` | Win32 shell, portable UI, FFmpeg audio, microphone recorder and configuration |
 | `assets/Playlists/` | Clean runtime templates |
 | `assets/shell/shell.svg` | The device shell drawing; the build prerenders it with resvg |
-| `tools/` | Asset embedding, shell prerendering, host-UI extraction, VMI mapping, packaging and Windows checks |
+| `tools/` | Firmware and resource extraction, asset embedding, shell prerendering, host-UI extraction, VMI mapping, packaging and Windows checks |
 | `tests/` | Native tests of the shared interface |
 | `re/docs/` | Findings, retained evidence and function dossiers |
 | `re/symbols/` | Address/name annotations for the analysis images |
