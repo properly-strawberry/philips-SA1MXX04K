@@ -39,7 +39,8 @@ centered text row, the percentage underneath, and the original progress-strip
 frames along the bottom edge.
 Shutdown shows Bye, then the original expanding ring of dots. The slower
 desktop sequence holds Bye for one second and each animation frame for 500 ms
-(4.5 seconds total).
+(4.5 seconds total). Music keeps playing through the shutdown sequence and stops
+when the player turns off completely. The resume position is saved at that point.
 
 The playback screen follows recovered title/metadata/time/progress/counter
 positions and includes the original 10-pixel time and 5-pixel counter fonts.
@@ -61,6 +62,9 @@ services remain adaptations.
   the player to swap to an ordinary resizable window with the status lines, and
   right-click again to go back. The choice and the window size are remembered
   in `philips.ini`; the position is not.
+- T: toggle always on top in either window mode. Alt+Space also offers a checked
+  Always on top item. The choice is remembered in `philips.ini` as `AlwaysOnTop`
+  and starts off until enabled.
 - At window sizes where a screen pixel is not a whole number of window pixels,
   the screen is enlarged 4x and scaled down smoothly so its pixels stay even;
   at whole multiples (the starting size is 3x) they are left sharp.

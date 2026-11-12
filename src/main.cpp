@@ -28,6 +28,7 @@ using player::Page;
 using player::SliderPosition;
 constexpr int W=920,H=412;
 constexpr UINT ScanDone=WM_APP+1;
+constexpr UINT AlwaysOnTopCommand=0x100;
 HWND window;
 fs::path appDir,musicDir,layoutDir;
 std::unique_ptr<Audio> audio;
@@ -41,6 +42,7 @@ std::array<uint32_t,128*64> screen;
 ULONGLONG started=0,pressedAt=0;
 int pressed=-1;
 bool closing=false;
+bool alwaysOnTop=false;
 std::array<bool,256> keyboardHeld{};
 std::array<Key,256> keyboardAction{};
 bool sliderDragging=false,powerKeyDown=false,releasingCapture=false;
@@ -276,7 +278,7 @@ void composeWindow(int width,int height) {
     if(!info.error.empty())status=info.error;
     else if(info.playing)status+=L"  ·  "+trackTitle(info);
     label(g,40,H-44,W-80,19,status.c_str(),12,Color(255,170,183,197));
-    label(g,40,H-24,W-80,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume   ·   P: hold power   ·   Right click: frameless",11,Color(255,111,126,143));
+    label(g,40,H-24,W-80,17,L"Up/down: browse / hold to seek   ·   Left: back   ·   Right: play/select   ·   M: options   ·   + / −: volume   ·   T: on top   ·   Right click: frameless",11,Color(255,111,126,143));
 }
 void paint(HDC dc,int width,int height) {
     composeWindow(width,height);
@@ -292,6 +294,11 @@ void presentFloating(HWND hwnd) {
 }
 void refresh(HWND hwnd) { if(borderless)presentFloating(hwnd);else InvalidateRect(hwnd,nullptr,FALSE); }
 constexpr DWORD floatingStyle=WS_POPUP|WS_SYSMENU|WS_MINIMIZEBOX,framedStyle=WS_OVERLAPPEDWINDOW;
+void setAlwaysOnTop(HWND hwnd,bool on) {
+    if(!SetWindowPos(hwnd,on?HWND_TOPMOST:HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE))return;
+    alwaysOnTop=on;
+    CheckMenuItem(GetSystemMenu(hwnd,FALSE),AlwaysOnTopCommand,MF_BYCOMMAND|(on?MF_CHECKED:MF_UNCHECKED));
+}
 // Swaps between the two kinds of window. The player keeps its size and its
 // place on the desktop; the window around it is what changes.
 void setBorderless(HWND hwnd,bool on) {
@@ -302,7 +309,7 @@ void setBorderless(HWND hwnd,bool on) {
     int width=std::max(1,int(std::lround(W*scale))),height=std::max(1,int(std::lround(H*scale)));
     RECT want{corner.x+(client.right-width)/2,corner.y+(client.bottom-height)/2,0,0};
     want.right=want.left+width;want.bottom=want.top+height;
-    borderless=on;DWORD style=on?floatingStyle:framedStyle,extended=on?WS_EX_LAYERED:0;
+    borderless=on;DWORD style=on?floatingStyle:framedStyle,extended=(on?WS_EX_LAYERED:0)|(alwaysOnTop?WS_EX_TOPMOST:0);
     SetWindowLongPtrW(hwnd,GWL_STYLE,style|WS_VISIBLE);SetWindowLongPtrW(hwnd,GWL_EXSTYLE,extended);
     RECT outer=want;AdjustWindowRectEx(&outer,style,FALSE,extended);
     for(int pass=0;pass<2;pass++) {
@@ -355,7 +362,7 @@ void saveSettings() {
     ui->remember();
     auto ini=appDir/L"philips.ini";auto& s=ui->settings;
     auto write=[&](const wchar_t* key,int value){WritePrivateProfileStringW(L"Player",key,std::to_wstring(value).c_str(),ini.c_str());};
-    write(L"Borderless",borderless);write(L"Battery",ui->battery);if(normalSize.cx>0){write(L"Width",normalSize.cx);write(L"Height",normalSize.cy);}write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
+    write(L"Borderless",borderless);write(L"AlwaysOnTop",alwaysOnTop);write(L"Battery",ui->battery);if(normalSize.cx>0){write(L"Width",normalSize.cx);write(L"Height",normalSize.cy);}write(L"Volume",s.volume);write(L"VolumeLimit",s.volumeLimit);write(L"Theme",s.theme);write(L"Language",s.language);
     write(L"Repeat",s.repeat);write(L"Shuffle",s.shuffle);write(L"Equalizer",s.equalizer);write(L"Backlight",s.backlight);write(L"ScreenOff",s.screenOff);write(L"Rotation",s.rotation);
     for(int i=0;i<5;i++)write((L"Band"+std::to_wstring(i)).c_str(),int(s.bands[i]));
     WritePrivateProfileStringW(L"Player",L"LastPlayed",ui->lastPlayed.c_str(),ini.c_str());write(L"ResumeSeconds",int(ui->resumePosition));
@@ -392,7 +399,15 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     // Windows sends F10 alone as a system key (it opens the window menu), so it never arrives as WM_KEYDOWN.
     if(wp==VK_F10&&(msg==WM_SYSKEYDOWN||msg==WM_SYSKEYUP))msg=msg==WM_SYSKEYDOWN?WM_KEYDOWN:WM_KEYUP;
     switch(msg) {
-    case WM_CREATE:SetTimer(hwnd,1,33,nullptr);return 0;
+    case WM_CREATE: {
+        HMENU menu=GetSystemMenu(hwnd,FALSE);
+        AppendMenuW(menu,MF_SEPARATOR,0,nullptr);
+        AppendMenuW(menu,MF_STRING|(alwaysOnTop?MF_CHECKED:MF_UNCHECKED),AlwaysOnTopCommand,L"Always on &top\tT");
+        SetTimer(hwnd,1,33,nullptr);return 0;
+    }
+    case WM_SYSCOMMAND:
+        if((wp&0xfff0)==AlwaysOnTopCommand){if(!closing)setAlwaysOnTop(hwnd,!alwaysOnTop);return 0;}
+        break;
     case WM_GETMINMAXINFO:{auto* i=reinterpret_cast<MINMAXINFO*>(lp);i->ptMinTrackSize={W/2,H/2};return 0;}
     case ScanDone:{std::lock_guard<std::mutex> l(libraryMutex);ui->setLibrary(std::move(scanResult));return 0;}
     case WM_TIMER: {
@@ -401,7 +416,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         ui->tick(time);
         sliderMotion.tick(time,ui->sliderPosition());
         if(!closing&&ui->takePowerOffRequest())SendMessageW(hwnd,WM_CLOSE,0,0);
-        if(closing&&ui->shutdownFinished()){DestroyWindow(hwnd);return 0;}
+        if(closing&&ui->shutdownFinished()){if(smokeStep<0)saveSettings();audio->stop();DestroyWindow(hwnd);return 0;}
         if(smokeStep>=0&&smokeStep<101)smokeTick();
         else if(smokeStep<0&&!screenshotPath.empty()&&time-started>8200&&!closing){saveScreenshot(screenshotPath);PostMessageW(hwnd,WM_CLOSE,0,0);}
         refresh(hwnd);return 0;
@@ -419,6 +434,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         else if(wp==VK_ADD||wp==VK_OEM_PLUS)pressKeyboard(wp,Key::VolumeUp);
         else if(wp==VK_SUBTRACT||wp==VK_OEM_MINUS)pressKeyboard(wp,Key::VolumeDown);
         else if(wp=='M'||wp==VK_APPS)ui->input(Key::Menu);
+        else if(wp=='T')setAlwaysOnTop(hwnd,!alwaysOnTop);
         else if(wp=='L')ui->input(Key::Lock);
         else if(wp=='P'){powerKeyDown=true;ui->moveSlider(SliderPosition::Power);}
         else if(wp=='S'&&!ui->locked&&!ui->booting()&&!ui->updating())ui->settings.shuffle=ui->settings.shuffle?0:1;
@@ -487,7 +503,7 @@ LRESULT CALLBACK procedure(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
         }
         break;
     case WM_SIZE:if(wp==SIZE_RESTORED)normalSize={LOWORD(lp),HIWORD(lp)};if(borderless&&wp!=SIZE_MINIMIZED)presentFloating(hwnd);break;
-    case WM_CLOSE:if(!closing){cancelHeldControls(hwnd,true);if(smokeStep<0)saveSettings();recorder.finish(true);audio->stop();ui->shutdown();closing=true;}return 0;
+    case WM_CLOSE:if(!closing){cancelHeldControls(hwnd,true);recorder.finish(true);ui->shutdown();closing=true;}return 0;
     case WM_DESTROY:KillTimer(hwnd,1);PostQuitMessage(0);return 0;
     }
     return DefWindowProcW(hwnd,msg,wp,lp);
@@ -514,7 +530,8 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     if(!loadShell()){MessageBoxW(nullptr,L"The shell artwork inside philips.exe is missing or damaged.",L"GoGear Mix",MB_ICONERROR);ui.reset();audio.reset();art={};playerCanvas.release();windowCanvas.release();GdiplusShutdown(token);return 1;}
     WNDCLASSW klass{};klass.lpfnWndProc=procedure;klass.hInstance=instance;klass.lpszClassName=L"PhilipsGoGearMix";klass.hCursor=LoadCursor(nullptr,IDC_ARROW);klass.hIcon=LoadIconW(instance,MAKEINTRESOURCEW(1));RegisterClassW(&klass);
     borderless=iniInt(L"Borderless",1,0,1)!=0;
-    DWORD style=borderless?floatingStyle:framedStyle,extended=borderless?WS_EX_LAYERED:0;
+    alwaysOnTop=iniInt(L"AlwaysOnTop",0,0,1)!=0;
+    DWORD style=borderless?floatingStyle:framedStyle,extended=(borderless?WS_EX_LAYERED:0)|(alwaysOnTop?WS_EX_TOPMOST:0);
     int width=iniInt(L"Width",W,W/2,16384),height=borderless?width*H/W:iniInt(L"Height",H,H/2,16384);
     RECT bounds{0,0,width,height};AdjustWindowRectEx(&bounds,style,FALSE,extended);started=GetTickCount64();
     window=CreateWindowExW(extended,klass.lpszClassName,L"Philips GoGear Mix",style,CW_USEDEFAULT,CW_USEDEFAULT,bounds.right-bounds.left,bounds.bottom-bounds.top,nullptr,nullptr,instance,nullptr);

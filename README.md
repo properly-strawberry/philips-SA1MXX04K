@@ -88,6 +88,7 @@ templates, never the local music library or station configuration.
 | Slider on the top surface | Left latches Lock; center unlocks; hold spring-return right for power-off |
 | `L` / hold `P` | Toggle lock / hold power-off |
 | Right click | Swap between the frameless floating player and an ordinary window |
+| `T` / Alt+Space > Always on top | Toggle always on top; remembered across restarts |
 | Drag the shell / its lower-right corner mark | Move / resize the frameless player |
 | Home | Main menu |
 | `M` | Current-track shortcuts, or radio options |
