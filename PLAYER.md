@@ -61,7 +61,8 @@ services remain adaptations.
   corner mark at its lower right to resize it (it keeps its shape). Right-click
   the player to swap to an ordinary resizable window with the status lines, and
   right-click again to go back. The choice and the window size are remembered
-  in `philips.ini`; the position is not.
+  in `philips.ini`; the position is not. Each launch centers the player in the
+  primary screen's work area, leaving room for the taskbar.
 - T: toggle always on top in either window mode. Alt+Space also offers a checked
   Always on top item. The choice is remembered in `philips.ini` as `AlwaysOnTop`
   and starts off until enabled.

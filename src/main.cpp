@@ -534,7 +534,12 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show) {
     DWORD style=borderless?floatingStyle:framedStyle,extended=(borderless?WS_EX_LAYERED:0)|(alwaysOnTop?WS_EX_TOPMOST:0);
     int width=iniInt(L"Width",W,W/2,16384),height=borderless?width*H/W:iniInt(L"Height",H,H/2,16384);
     RECT bounds{0,0,width,height};AdjustWindowRectEx(&bounds,style,FALSE,extended);started=GetTickCount64();
-    window=CreateWindowExW(extended,klass.lpszClassName,L"Philips GoGear Mix",style,CW_USEDEFAULT,CW_USEDEFAULT,bounds.right-bounds.left,bounds.bottom-bounds.top,nullptr,nullptr,instance,nullptr);
+    RECT work{0,0,GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN)};
+    SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);
+    int outerWidth=bounds.right-bounds.left,outerHeight=bounds.bottom-bounds.top;
+    int x=work.left+std::max(0,int(work.right-work.left-outerWidth)/2);
+    int y=work.top+std::max(0,int(work.bottom-work.top-outerHeight)/2);
+    window=CreateWindowExW(extended,klass.lpszClassName,L"Philips GoGear Mix",style,x,y,outerWidth,outerHeight,nullptr,nullptr,instance,nullptr);
     if(!window){ui.reset();audio.reset();art={};playerCanvas.release();windowCanvas.release();GdiplusShutdown(token);return 1;}
     ShowWindow(window,show);if(borderless)presentFloating(window);beginScan();MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
     scanStop=true;if(scanner.joinable())scanner.join();recorder.finish(true);ui.reset();audio.reset();art={};playerCanvas.release();windowCanvas.release();GdiplusShutdown(token);
